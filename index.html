@@ -9,9 +9,31 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
 <script>
+// v2.46.26: SW 자동 업데이트 + 새 버전 즉시 적용 (사용자 ↻ 없이)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW 등록 실패:', e));
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      // 매 5분마다 SW 업데이트 체크
+      setInterval(() => reg.update().catch(()=>{}), 5 * 60 * 1000);
+      // 새 SW waiting 발견 → 즉시 활성화 + reload
+      reg.addEventListener('updatefound', () => {
+        const newSW = reg.installing;
+        if (!newSW) return;
+        newSW.addEventListener('statechange', () => {
+          if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+            console.log('[SW] 새 버전 감지 — 자동 적용');
+            newSW.postMessage({type:'SKIP_WAITING'});
+          }
+        });
+      });
+    }).catch(e => console.warn('SW 등록 실패:', e));
+    // controllerchange = 새 SW 활성화됨 → reload
+    let reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloading) return; reloading = true;
+      console.log('[SW] 활성 SW 변경 → 페이지 새로고침');
+      location.reload();
+    });
   });
 }
 </script>
