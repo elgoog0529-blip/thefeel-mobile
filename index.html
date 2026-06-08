@@ -395,7 +395,7 @@ if ('serviceWorker' in navigator) {
         </div>
         <div id="naverBreakdown" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
       </div>
-      <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}</style>
+      <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}} @keyframes slideDown{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}</style>
 
       <div class="hero-card">
         <div class="hero-row">
@@ -2701,6 +2701,51 @@ if ('serviceWorker' in navigator) {
   });
   // 1분마다 sync 시간 표시만 갱신 (PC가 자동 sync했을 수도)
   setInterval(_updateEcountBar, 60 * 1000);
+
+  // v2.46.34: PC 새 빌드 알림 banner (모바일 사용 중 새 dmg 출시 시)
+  (async function pcVersionNotifier(){
+    try {
+      const r = await fetch('/downloads/latest.json?t='+Date.now(), {cache:'no-store'});
+      if (!r.ok) return;
+      const j = await r.json();
+      const lastSeen = localStorage.getItem('lastSeenPCVer');
+      if (lastSeen === j.version) return;
+      // 새 버전 — 첫 진입은 silent (lastSeen 저장만), 이후 진입에서 알림
+      if (!lastSeen) { localStorage.setItem('lastSeenPCVer', j.version); return; }
+      // 알림 banner
+      setTimeout(() => {
+        const banner = document.createElement('div');
+        banner.style.cssText = 'position:fixed;top:60px;left:12px;right:12px;background:linear-gradient(135deg,#1a73e8,#0c47b7);color:#fff;border-radius:12px;padding:11px 14px;box-shadow:0 6px 20px rgba(26,115,232,0.35);z-index:88;display:flex;align-items:center;gap:10px;font-size:12px;animation:slideDown .4s ease;';
+        const builtDate = j.builtAt ? new Date(j.builtAt).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+        banner.innerHTML = `
+          <span style="font-size:16px;">🆕</span>
+          <div style="flex:1;line-height:1.4;">
+            <div style="font-weight:700;">PC 앱 v${j.version} 출시</div>
+            <div style="font-size:10.5px;opacity:0.9;">${builtDate} 빌드 · PC 켜면 자동 업데이트</div>
+          </div>
+          <button id="pcVerDismiss" style="background:rgba(255,255,255,0.25);border:none;color:#fff;font-size:14px;cursor:pointer;border-radius:6px;padding:4px 8px;">확인</button>`;
+        document.body.appendChild(banner);
+        document.getElementById('pcVerDismiss').addEventListener('click', () => {
+          banner.remove();
+          localStorage.setItem('lastSeenPCVer', j.version);
+        });
+      }, 1500);
+    } catch (e) { /* offline OK */ }
+  })();
+  // 5분마다 다시 체크 (모바일 사용 중 새 버전 나오면)
+  setInterval(() => {
+    if (!document.hidden) (async () => {
+      try {
+        const r = await fetch('/downloads/latest.json?t='+Date.now(), {cache:'no-store'});
+        if (!r.ok) return;
+        const j = await r.json();
+        const lastSeen = localStorage.getItem('lastSeenPCVer');
+        if (lastSeen && lastSeen !== j.version && !document.querySelector('#pcVerDismiss')) {
+          location.reload();  // 새 PC 빌드 + 모바일 새 코드 가능성 → 자동 reload
+        }
+      } catch{}
+    })();
+  }, 5 * 60 * 1000);
 
   // v2.46.33: PWA 홈 화면 추가 안내 (iOS Safari + Android, 첫 진입 시 한 번만)
   (function pwaInstall(){
