@@ -828,9 +828,10 @@ if ('serviceWorker' in navigator) {
 
   // ─── 데이터 로드 ───
   let D = null, INV = null, MD = null, TXN = null, DAILY = null, NAVER_RT = null;
-  // v2.46.14: 실시간 카드 렌더 (네이버 + 예상 이익)
-  const _NAVER_SETTLE_RATE = 0.8824;
-  const _NAVER_PROFIT_RATE = 0.1722;  // 매출명세서 2026 평균
+  // v2.46.17: 실시간 카드 — 이익률은 원가 대비 (사용자 룰)
+  const _NAVER_SETTLE_RATE = 0.8824;            // 정산 / 매출
+  const _NAVER_PROFIT_AMT_RATE = 0.1722;        // 이익금액 / 매출 (금액 계산용)
+  const _NAVER_PROFIT_RATE = 27.81;              // 이익률 = 이익 / 원가 × 100 (라벨용)
   const _NAVER_STATUS_LABELS = {PAYED:{l:'결제',c:'#03c75a'},PURCHASE_DECIDED:{l:'구매확정',c:'#1a73e8'},DELIVERING:{l:'배송중',c:'#0bb'},DELIVERED:{l:'배송완료',c:'#7c3aed'},CANCELED:{l:'취소',c:'#ef4444'},RETURNED:{l:'반품',c:'#f59e0b'},EXCHANGED:{l:'교환',c:'#8b5cf6'}};
   function renderNaverCard() {
     const card = document.getElementById('naverCard');
@@ -843,7 +844,7 @@ if ('serviceWorker' in navigator) {
     setT('naverAmt', fmtK(amt));
     setT('naverCnt', `${NAVER_RT.today.paidCount||0}건 · ${NAVER_RT.today.totalQty||0}개`);
     setT('naverEst', fmtK(Math.round(amt * _NAVER_SETTLE_RATE)));
-    setT('naverProfit', fmtK(Math.round(amt * _NAVER_PROFIT_RATE)));
+    setT('naverProfit', fmtK(Math.round(amt * _NAVER_PROFIT_AMT_RATE)));
     const ts = NAVER_RT.ts ? new Date(NAVER_RT.ts) : null;
     if (ts) {
       const m = Math.floor((Date.now() - ts.getTime()) / 60000);
@@ -975,27 +976,29 @@ if ('serviceWorker' in navigator) {
   function openHeroModal() {
     if (!D) return;
     const r = D.recent2026, t = D.total;
-    const margin = t.sales > 0 ? (t.profit/t.sales*100) : 0;
-    const rMargin = r.sales > 0 ? (r.profit/r.sales*100) : 0;
+    // v2.46.18: 이익률 = profit/cost (사용자 룰)
+    const profitRate = t.cost > 0 ? (t.profit/t.cost*100) : 0;
+    const rProfitRate = r.cost > 0 ? (r.profit/r.cost*100) : 0;
     const avgTicket = r.rows > 0 ? r.sales / r.rows : 0;
     openModal('2026 운영 요약', `
       <div class="be-card"><div class="be-top"><div class="be-name">2026 누적 매출</div><div class="be-diff up">${fmtK(r.sales)}</div></div><div class="be-foot"><span>거래 ${fmtN(r.rows)}</span><span>평균 객단가 ${fmtK(avgTicket)}</span></div></div>
       <div class="be-card"><div class="be-top"><div class="be-name">정산 회수 (VAT 별도)</div><div class="be-diff">${fmtK(r.settle)}</div></div></div>
-      <div class="be-card"><div class="be-top"><div class="be-name">2026 이익</div><div class="be-diff up">${fmtK(r.profit)}</div></div><div class="be-foot"><span>이익률</span><b>${rMargin.toFixed(2)}%</b></div></div>
-      <div class="be-card"><div class="be-top"><div class="be-name">전체 누적 (2023~2026)</div><div class="be-diff">${fmtK(t.sales)}</div></div><div class="be-foot"><span>이익</span><b>${margin.toFixed(2)}%</b><span>이익 ${fmtK(t.profit)}</span></div></div>
+      <div class="be-card"><div class="be-top"><div class="be-name">2026 이익</div><div class="be-diff up">${fmtK(r.profit)}</div></div><div class="be-foot"><span>이익률 (원가대비)</span><b>${rProfitRate.toFixed(2)}%</b></div></div>
+      <div class="be-card"><div class="be-top"><div class="be-name">전체 누적 (2023~2026)</div><div class="be-diff">${fmtK(t.sales)}</div></div><div class="be-foot"><span>이익률</span><b>${profitRate.toFixed(2)}%</b><span>이익 ${fmtK(t.profit)}</span></div></div>
       <div class="be-card"><div class="be-top"><div class="be-name">활성 데이터</div><div class="be-diff">${fmtN((D.brands||[]).length)} 브랜드 · ${fmtN((D.channels||[]).length)} 채널</div></div></div>
-    `, {share:{title:'더필코리아 2026 요약', text:`매출 ${fmtK(r.sales)} · 정산 ${fmtK(r.settle)} · 이익 ${fmtK(r.profit)} (${rMargin.toFixed(1)}%)`}});
+    `, {share:{title:'더필코리아 2026 요약', text:`매출 ${fmtK(r.sales)} · 정산 ${fmtK(r.settle)} · 이익 ${fmtK(r.profit)} (${rProfitRate.toFixed(1)}%)`}});
   }
 
   function renderDashboard() {
     if (!D) return;
     // v2.46.6: 대시보드 = 26년 매출 기준 (누적은 정산 화면에서)
     const r = D.recent2026, t = D.total;
-    const rMargin = r.sales > 0 ? (r.profit/r.sales*100) : 0;
+    // v2.46.18: 이익률 = profit/cost (사용자 룰)
+    const rProfitRate = r.cost > 0 ? (r.profit/r.cost*100) : 0;
     const avgTicket = r.rows > 0 ? r.sales / r.rows : 0;
     document.getElementById('dashPeriod').textContent = '2026';
     document.getElementById('dashAmount').textContent = fmtK(r.sales);
-    document.getElementById('dashDelta').textContent = `이익 ${fmtK(r.profit)} · 이익 ${rMargin.toFixed(1)}%`;
+    document.getElementById('dashDelta').textContent = `이익 ${fmtK(r.profit)} · 이익률 ${rProfitRate.toFixed(1)}%`;
     document.getElementById('dashMini').innerHTML = `
       <div class="m"><div class="l">2026 정산</div><div class="v">${fmtK(r.settle)}</div></div>
       <div class="m"><div class="l">2026 거래</div><div class="v">${fmtN(r.rows)}</div></div>
@@ -1005,7 +1008,7 @@ if ('serviceWorker' in navigator) {
     const activeBrands = (D.brands||[]).filter(b => b.qty > 0).length;
     const activeChannels = (D.channels||[]).filter(c => c.qty > 0).length;
     document.getElementById('dashStats').innerHTML = `
-      <div class="stat full"><div class="l">2026 매출</div><div class="v" style="font-size:22px;">${fmtK(r.sales)}</div><div class="d up">이익 ${fmtK(r.profit)} · 이익 ${rMargin.toFixed(1)}%</div></div>
+      <div class="stat full"><div class="l">2026 매출</div><div class="v" style="font-size:22px;">${fmtK(r.sales)}</div><div class="d up">이익 ${fmtK(r.profit)} · 이익률 ${rProfitRate.toFixed(1)}%</div></div>
       <div class="stat"><div class="l">2026 거래</div><div class="v">${fmtN(r.rows)}</div><div class="d">건</div></div>
       <div class="stat"><div class="l">2026 정산</div><div class="v">${fmtK(r.settle)}</div><div class="d">VAT 별도</div></div>
       <div class="stat"><div class="l">2026 평균 객단가</div><div class="v">${fmtK(avgTicket)}</div><div class="d up">${fmtN(r.rows)}건</div></div>
