@@ -2534,6 +2534,22 @@ if ('serviceWorker' in navigator) {
     await loadData();
     await loadFx();
     setInterval(() => loadFx(), 60 * 1000);
+    // v2.46.31: 데이터 자동 새로고침 (5분) — 사용자 ↻ 없이 신선한 데이터
+    setInterval(async () => {
+      try {
+        // 페이지가 visible할 때만 (배터리 절약)
+        if (document.hidden) return;
+        await loadData(true);
+        if (typeof _updateFreshness === 'function') _updateFreshness();
+      } catch (e) { console.warn('자동 갱신 실패:', e.message); }
+    }, 5 * 60 * 1000);
+    // 페이지 visible 복귀 시 즉시 갱신
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && _AUTH_KEY) {
+        loadData(true).catch(()=>{});
+        if (typeof _updateFreshness === 'function') _updateFreshness();
+      }
+    });
   }
 
   async function _tryAutoLogin() {
