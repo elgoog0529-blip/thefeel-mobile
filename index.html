@@ -419,8 +419,8 @@ if ('serviceWorker' in navigator) {
         </div>
       </div>
 
-      <!-- 인사이트 카드 (가로 스와이프) -->
-      <div class="sec-head"><span class="sec-title">💡 인사이트</span></div>
+      <!-- v2.46.27: 인사이트 카드 — 26년만 (사용자 룰) -->
+      <div class="sec-head"><span class="sec-title">💡 2026 핵심 인사이트</span><span class="sec-more">올해만</span></div>
       <div class="insight-row" id="insightRow"></div>
 
       <div class="stat-grid" id="dashStats"></div>
@@ -967,14 +967,15 @@ if ('serviceWorker' in navigator) {
       });
     if (brandsByMargin[0]) {
       const b = brandsByMargin[0];
-      const m = b.sales>0?b.profit/b.sales*100:0;
-      arr.push({k:'up', l:'이익 1위 브랜드', t:b.name, d:`이익 ${m.toFixed(1)}% · 매출 ${fmtK(b.sales)}`});
+      const m = b.cost>0?b.profit/b.cost*100:0;  // v2.46.27: 이익률 = profit/cost
+      arr.push({k:'up', l:'2026 이익률 1위', t:b.name, d:`이익률 ${m.toFixed(1)}% · 매출 ${fmtK(b.sales)}`});
     }
-    // 2) 매출 1위 채널
+    // 2) 매출 1위 채널 (2026)
     const chTop = (D.channels26||D.channels||[])[0];
     if (chTop) {
-      const share = (D.total?.sales||0)>0 ? chTop.sales/D.total.sales*100 : 0;
-      arr.push({k:'up', l:'매출 1위 채널', t:chTop.name, d:`전체의 ${share.toFixed(1)}% · ${fmtK(chTop.sales)}`});
+      const r26Sales = D.recent2026?.sales || 0;
+      const share = r26Sales>0 ? chTop.sales/r26Sales*100 : 0;
+      arr.push({k:'up', l:'2026 매출 1위 채널', t:chTop.name, d:`2026 ${share.toFixed(1)}% · ${fmtK(chTop.sales)}`});
     }
     // 3) 회수율 가장 낮은 — 재고 신규 입고 brand (마이너스 의미 X, 매입 직후로 표시)
     const beStock = (D.breakeven||[]).filter(b=>b.diff<0).slice().sort((a,b)=>a.diff-b.diff);
