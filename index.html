@@ -2077,10 +2077,27 @@ if ('serviceWorker' in navigator) {
         } catch { /* try next */ }
       }
     }
-    const cur = [{c:'EUR', v:fx.EUR}, {c:'USD', v:fx.USD}, {c:'JPY 100', v:fx.JPY*100}];
-    document.getElementById('fxRow').innerHTML = cur.map(x =>
-      `<div class="fx" data-cur="${x.c}" data-rate="${x.v}"><div class="c">${x.c}</div><div class="v">${x.v.toFixed(2)}</div><div class="d">${gen}</div></div>`
-    ).join('');
+    // v2.46.30: 일일 변동률 — fxHistory에서 어제 환율 가져와 비교
+    let history = {};
+    try { history = JSON.parse(localStorage.getItem('fxHistory') || '{}'); } catch {}
+    const today = new Date().toISOString().slice(0,10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+    if (!history[today]) {
+      history[today] = {...fx};
+      localStorage.setItem('fxHistory', JSON.stringify(history));
+    }
+    const y = history[yesterday];
+    function delta(cur, val){ if(!y || !y[cur]) return null; return (val - y[cur]) / y[cur] * 100; }
+    const cur = [
+      {c:'EUR', v:fx.EUR, d: delta('EUR', fx.EUR)},
+      {c:'USD', v:fx.USD, d: delta('USD', fx.USD)},
+      {c:'JPY 100', v:fx.JPY*100, d: delta('JPY', fx.JPY)},
+    ];
+    document.getElementById('fxRow').innerHTML = cur.map(x => {
+      const dt = x.d != null ? (x.d >= 0 ? `▲ ${x.d.toFixed(2)}%` : `▼ ${Math.abs(x.d).toFixed(2)}%`) : gen;
+      const cls = x.d != null ? (x.d >= 0 ? 'up' : 'down') : '';
+      return `<div class="fx" data-cur="${x.c}" data-rate="${x.v}"><div class="c">${x.c}</div><div class="v">${x.v.toFixed(2)}</div><div class="d ${cls}">${dt}</div></div>`;
+    }).join('');
     document.querySelectorAll('#fxRow .fx').forEach(card => card.addEventListener('click', () => {
       haptic();
       const cur = card.dataset.cur;
