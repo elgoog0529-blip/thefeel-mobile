@@ -1628,18 +1628,29 @@ if ('serviceWorker' in navigator) {
     // 새 화면 element 있으면 매출명세 렌더, 없으면 (옛 캐시) skip
     const amt = document.getElementById('dsHeroAmount2');
     if (!amt) return;
-    // 매출 누적 totals (D.total 기반 — PC 매출명세서 데이터)
-    const t = D.total || {};
-    const profit = (t.profit != null) ? t.profit : ((t.settle||0) - (t.cost||0));
-    const rate = (t.cost||0) > 0 ? profit / t.cost * 100 : 0;
-    amt.textContent = fmtK(t.settle || 0);
+    // v2.46.32: 매출명세 hero — 2026 우선 + 오늘/어제/이번주 비교
+    const r = D.recent2026 || D.total || {};
+    const profit = (r.profit != null) ? r.profit : ((r.settle||0) - (r.cost||0));
+    const rate = (r.cost||0) > 0 ? profit / r.cost * 100 : 0;
+    amt.textContent = fmtK(r.sales || 0);
     const delta = document.getElementById('dsHeroDelta2');
-    if (delta) delta.textContent = `이익 ${fmtK(profit)} · 이익률 ${rate.toFixed(1)}% (이익/원가)`;
+    if (delta) delta.textContent = `2026 매출 · 이익 ${fmtK(profit)} · 이익률 ${rate.toFixed(1)}%`;
+    const dsHeroPeriod = document.getElementById('dsHeroPeriod');
+    if (dsHeroPeriod) dsHeroPeriod.textContent = '2026';
+    // 일별 비교 (DAILY 또는 NAVER_RT 활용)
+    const days = (DAILY?.days || []).slice();
+    const today = days[days.length - 1] || {};
+    const yesterday = days[days.length - 2] || {};
+    const last7 = days.slice(-7).reduce((s,d)=>s+(d.sales||0),0);
+    const last14 = days.slice(-14).reduce((s,d)=>s+(d.sales||0),0);
+    const prev7 = days.slice(-14,-7).reduce((s,d)=>s+(d.sales||0),0);
+    const dod = yesterday.sales > 0 ? ((today.sales||0) - yesterday.sales) / yesterday.sales * 100 : null;
+    const wow = prev7 > 0 ? (last7 - prev7) / prev7 * 100 : null;
     const mini = document.getElementById('dsHeroMini2');
     if (mini) mini.innerHTML = `
-      <div class="m"><div class="l">매출</div><div class="v">${fmtK(t.sales||0)}</div></div>
-      <div class="m"><div class="l">원가</div><div class="v">${fmtK(t.cost||0)}</div></div>
-      <div class="m"><div class="l">거래</div><div class="v">${fmtN(t.rows||0)}</div></div>
+      <div class="m"><div class="l">오늘 (네이버)</div><div class="v">${fmtK(NAVER_RT?.today?.totalAmount||0)}</div></div>
+      <div class="m"><div class="l">최근 7일</div><div class="v">${fmtK(last7)}</div><div class="d ${wow>=0?'up':'down'}" style="font-size:9px;">${wow!=null?(wow>=0?'▲':'▼')+' '+Math.abs(wow).toFixed(1)+'% WoW':''}</div></div>
+      <div class="m"><div class="l">2026 원가</div><div class="v">${fmtK(r.cost||0)}</div></div>
     `;
     // v2.46.21: 네이버 실시간 카드 (매출명세서 화면)
     const dsCard = document.getElementById('dsNaverCard');

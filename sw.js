@@ -1,5 +1,5 @@
-// v2.46.31 SW — .json/.enc/.html은 network-first, 자산은 cache-first
-const CACHE = 'thefeel-mobile-v2.46.31';
+// v2.46.32 SW — .json/.enc/.html은 network-first, 자산은 cache-first
+const CACHE = 'thefeel-mobile-v2.46.32';
 const ASSETS = [
   './',
   './index.html',
@@ -17,7 +17,7 @@ const ASSETS = [
   './fonts/JetBrainsMono-Regular.woff2',
 ];
 
-// v2.46.31: 페이지에서 SKIP_WAITING 메시지 받으면 즉시 활성화
+// v2.46.32: 페이지에서 SKIP_WAITING 메시지 받으면 즉시 활성화
 self.addEventListener('message', e => {
   if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
