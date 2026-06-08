@@ -341,7 +341,14 @@ if ('serviceWorker' in navigator) {
           <div class="ttl" id="headTitle">운영 대시보드</div>
         </div>
       </div>
-      <button class="theme-btn" id="themeBtn" aria-label="테마 전환">🌓</button>
+      <!-- v2.46.29: 데이터 신선도 표시 -->
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div id="freshChip" style="display:flex;align-items:center;gap:5px;padding:4px 9px;background:rgba(3,199,90,0.12);border-radius:14px;font-size:10px;font-family:'MonoLocal',monospace;color:#02a647;font-weight:600;" title="데이터 신선도">
+          <span id="freshDot" style="width:6px;height:6px;border-radius:50%;background:#03c75a;animation:pulse 1.5s infinite;"></span>
+          <span id="freshText">—</span>
+        </div>
+        <button class="theme-btn" id="themeBtn" aria-label="테마 전환">🌓</button>
+      </div>
     </div>
 
     <!-- ===================== 대시보드 ===================== -->
@@ -895,6 +902,7 @@ if ('serviceWorker' in navigator) {
       const info = _NAVER_STATUS_LABELS[k] || {l:k, c:'#888'};
       return `<div style="padding:4px 9px;background:${info.c}22;color:${info.c};border-radius:10px;font-size:10px;font-weight:600;">${info.l} ${v}</div>`;
     }).join('');
+    if (typeof _updateFreshness === 'function') _updateFreshness();
   }
   setInterval(renderNaverCard, 60 * 1000);
 
@@ -2649,6 +2657,28 @@ if ('serviceWorker' in navigator) {
   });
   // 1분마다 sync 시간 표시만 갱신 (PC가 자동 sync했을 수도)
   setInterval(_updateEcountBar, 60 * 1000);
+
+  // v2.46.29: 헤더 데이터 신선도 chip — naver 또는 ecount sync ts 기반
+  function _updateFreshness() {
+    const chip = document.getElementById('freshChip');
+    const dot = document.getElementById('freshDot');
+    const txt = document.getElementById('freshText');
+    if (!chip || !txt) return;
+    const ts = NAVER_RT?.ts ? new Date(NAVER_RT.ts).getTime() : 0;
+    if (!ts) { txt.textContent = '대기'; return; }
+    const min = Math.floor((Date.now() - ts) / 60000);
+    let color, bg, label;
+    if (min < 2)      { color='#02a647'; bg='rgba(3,199,90,0.15)';  label = min < 1 ? '실시간' : '1분 전'; }
+    else if (min < 5) { color='#02a647'; bg='rgba(3,199,90,0.15)';  label = `${min}분 전`; }
+    else if (min < 30){ color='#b8941f'; bg='rgba(212,175,55,0.18)';label = `${min}분 전`; }
+    else if (min < 60){ color='#f59e0b'; bg='rgba(245,158,11,0.18)';label = `${min}분 전`; }
+    else              { color='#ef4444'; bg='rgba(239,68,68,0.15)'; label = Math.floor(min/60)+'시간 전'; }
+    chip.style.color = color;
+    chip.style.background = bg;
+    dot.style.background = color;
+    txt.textContent = label;
+  }
+  setInterval(_updateFreshness, 30 * 1000);
   </script>
 </body>
 </html>
