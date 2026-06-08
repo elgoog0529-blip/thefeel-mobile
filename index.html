@@ -416,7 +416,7 @@ if ('serviceWorker' in navigator) {
       <div class="list" id="dashChannelTop"></div>
 
       <!-- v2.46.23: 최근 거래 Top 15 (PC와 동일성) -->
-      <div class="sec-head"><span class="sec-title">최근 거래 (Top 15)</span><span class="sec-more">정산+MD 통합</span></div>
+      <div class="sec-head"><span class="sec-title">최근 거래 (Top 5)</span><span class="sec-more">정산+MD 통합</span></div>
       <div class="list" id="dashRecent15"></div>
     </div>
 
@@ -937,7 +937,7 @@ if ('serviceWorker' in navigator) {
     const arr = [];
     // 1) 이익 1위 브랜드 — 매출 5억 이상 의미있는 brand만 (작은 brand 제외)
     const MIN_SALES = 5e8;  // 5억 미만 brand는 이익 % 의미 없음 (수량 적음)
-    const brandsByMargin = (D.brands||[])
+    const brandsByMargin = (D.brands26||D.brands||[])
       .filter(b => (b.sales||0) >= MIN_SALES)
       .slice().sort((a,b)=>{
         const ma = a.sales>0?a.profit/a.sales:0, mb = b.sales>0?b.profit/b.sales:0;
@@ -949,7 +949,7 @@ if ('serviceWorker' in navigator) {
       arr.push({k:'up', l:'이익 1위 브랜드', t:b.name, d:`이익 ${m.toFixed(1)}% · 매출 ${fmtK(b.sales)}`});
     }
     // 2) 매출 1위 채널
-    const chTop = (D.channels||[])[0];
+    const chTop = (D.channels26||D.channels||[])[0];
     if (chTop) {
       const share = (D.total?.sales||0)>0 ? chTop.sales/D.total.sales*100 : 0;
       arr.push({k:'up', l:'매출 1위 채널', t:chTop.name, d:`전체의 ${share.toFixed(1)}% · ${fmtK(chTop.sales)}`});
@@ -968,7 +968,7 @@ if ('serviceWorker' in navigator) {
       arr.push({k:'up', l:'분기 달성', t:b.brand, d:`초과 회수 +${fmtK(b.diff)}`});
     }
     // 5) 최근 월 매출 trend
-    const months = D.months||[];
+    const months = D.months26||D.months||[];
     if (months.length >= 2) {
       const last = months[months.length-1], prev = months[months.length-2];
       const pct = prev.sales>0 ? (last.sales-prev.sales)/prev.sales*100 : 0;
@@ -977,7 +977,7 @@ if ('serviceWorker' in navigator) {
         d:`전월 대비 ${pct>=0?'▲':'▼'} ${Math.abs(pct).toFixed(1)}%`});
     }
     // 6) 이익 가장 안 좋은 채널 (이익 가장 낮은 % 채널)
-    const channels = (D.channels||[]).slice().sort((a,b) => {
+    const channels = (D.channels26||D.channels||[]).slice().sort((a,b) => {
       const ma=a.sales>0?a.profit/a.sales:0, mb=b.sales>0?b.profit/b.sales:0;
       return ma - mb;
     });
@@ -1002,29 +1002,28 @@ if ('serviceWorker' in navigator) {
       <div class="be-card"><div class="be-top"><div class="be-name">정산 회수 (VAT 별도)</div><div class="be-diff">${fmtK(r.settle)}</div></div></div>
       <div class="be-card"><div class="be-top"><div class="be-name">2026 이익</div><div class="be-diff up">${fmtK(r.profit)}</div></div><div class="be-foot"><span>이익률 (원가대비)</span><b>${rProfitRate.toFixed(2)}%</b></div></div>
       <div class="be-card"><div class="be-top"><div class="be-name">전체 누적 (2023~2026)</div><div class="be-diff">${fmtK(t.sales)}</div></div><div class="be-foot"><span>이익률</span><b>${profitRate.toFixed(2)}%</b><span>이익 ${fmtK(t.profit)}</span></div></div>
-      <div class="be-card"><div class="be-top"><div class="be-name">활성 데이터</div><div class="be-diff">${fmtN((D.brands||[]).length)} 브랜드 · ${fmtN((D.channels||[]).length)} 채널</div></div></div>
+      <div class="be-card"><div class="be-top"><div class="be-name">활성 데이터</div><div class="be-diff">${fmtN((D.brands26||D.brands||[]).length)} 브랜드 · ${fmtN((D.channels26||D.channels||[]).length)} 채널</div></div></div>
     `, {share:{title:'더필코리아 2026 요약', text:`매출 ${fmtK(r.sales)} · 정산 ${fmtK(r.settle)} · 이익 ${fmtK(r.profit)} (${rProfitRate.toFixed(1)}%)`}});
   }
 
   function renderDashboard() {
     if (!D) return;
     // v2.46.6: 대시보드 = 26년 매출 기준 (누적은 정산 화면에서)
-    const r = D.recent2026, t = D.total;
-    // v2.46.21: hero = 전체 누적 매출, 이익률 = profit/cost (사용자 룰)
-    const profitRate = t.cost > 0 ? (t.profit/t.cost*100) : 0;
+    const r = D.recent2026;
+    // v2.46.25: 대시보드 = 2026년만 (사용자 요청 — 전체 누적 제거)
     const rProfitRate = r.cost > 0 ? (r.profit/r.cost*100) : 0;
     const avgTicket = r.rows > 0 ? r.sales / r.rows : 0;
-    document.getElementById('dashPeriod').textContent = 'ALL';
-    document.getElementById('dashAmount').textContent = fmtK(t.sales);
-    document.getElementById('dashDelta').textContent = `이익 ${fmtK(t.profit)} · 원가 ${fmtK(t.cost)} · 이익률 ${profitRate.toFixed(1)}%`;
+    document.getElementById('dashPeriod').textContent = '2026';
+    document.getElementById('dashAmount').textContent = fmtK(r.sales);
+    document.getElementById('dashDelta').textContent = `이익 ${fmtK(r.profit)} · 원가 ${fmtK(r.cost)} · 이익률 ${rProfitRate.toFixed(1)}%`;
     document.getElementById('dashMini').innerHTML = `
-      <div class="m"><div class="l">전체 정산</div><div class="v">${fmtK(t.settle)}</div></div>
-      <div class="m"><div class="l">2026 매출</div><div class="v">${fmtK(r.sales)}</div></div>
-      <div class="m"><div class="l">2026 이익률</div><div class="v">${rProfitRate.toFixed(1)}%</div></div>
+      <div class="m"><div class="l">2026 정산</div><div class="v">${fmtK(r.settle)}</div></div>
+      <div class="m"><div class="l">2026 거래</div><div class="v">${fmtN(r.rows)}</div></div>
+      <div class="m"><div class="l">평균 객단가</div><div class="v">${fmtK(avgTicket)}</div></div>
     `;
 
-    const activeBrands = (D.brands||[]).filter(b => b.qty > 0).length;
-    const activeChannels = (D.channels||[]).filter(c => c.qty > 0).length;
+    const activeBrands = (D.brands26||D.brands||[]).filter(b => b.qty > 0).length;
+    const activeChannels = (D.channels26||D.channels||[]).filter(c => c.qty > 0).length;
     document.getElementById('dashStats').innerHTML = `
       <div class="stat full"><div class="l">2026 매출</div><div class="v" style="font-size:22px;">${fmtK(r.sales)}</div><div class="d up">이익 ${fmtK(r.profit)} · 이익률 ${rProfitRate.toFixed(1)}%</div></div>
       <div class="stat"><div class="l">2026 거래</div><div class="v">${fmtN(r.rows)}</div><div class="d">건</div></div>
@@ -1042,7 +1041,7 @@ if ('serviceWorker' in navigator) {
 
     // 월별 차트 — months 없으면 카드 숨김
     const bars = document.getElementById('bars');
-    const months = D.months || [];
+    const months = D.months26 || D.months || [];
     const chartCard = bars.closest('.chart-card');
     const chartHead = chartCard?.previousElementSibling;
     if (!months.length) {
@@ -1060,7 +1059,7 @@ if ('serviceWorker' in navigator) {
     }
 
     // 브랜드 TOP 5 — 이익(profit/sales) + 이익률(profit/cost) 둘 다
-    const bTop = (D.brands || []).slice(0, 5);
+    const bTop = (D.brands26 || D.brands || []).slice(0, 5);
     const bMax = Math.max(1, ...bTop.map(b => b.sales));
     document.getElementById('dashBrandTop').innerHTML = bTop.map(b => {
       const m = b.sales > 0 ? (b.profit/b.sales*100) : 0;
@@ -1069,12 +1068,12 @@ if ('serviceWorker' in navigator) {
       return `<div class="lrow" data-brand="${b.name}"><div class="lic" style="${brandStyle(b.name)}">${ab}</div><div class="lmain"><div class="lnm">${b.name}</div><div class="lsub">${fmtN(b.qty)}건 · 이익 ${fmtK(b.profit)} · 이익률 ${roi.toFixed(1)}%</div><div class="lbar"><i style="width:${b.sales/bMax*100}%"></i></div></div><div class="lval"><div class="lamt">${fmtK(b.sales)}</div><div class="lpct ${m>=0?'up':'down'}">이익 ${m.toFixed(1)}%</div></div></div>`;
     }).join('');
     document.querySelectorAll('#dashBrandTop .lrow').forEach(row => row.addEventListener('click', () => {
-      haptic(); const b = (D.brands||[]).find(x => x.name === row.dataset.brand);
+      haptic(); const b = (D.brands26||D.brands||[]).find(x => x.name === row.dataset.brand);
       if (b) openBrandModal(b);
     }));
 
     // 채널 TOP 5 — 이익 + 이익률
-    const cTop = (D.channels || []).slice(0, 5);
+    const cTop = (D.channels26 || D.channels || []).slice(0, 5);
     const cMax = Math.max(1, ...cTop.map(c => c.sales));
     document.getElementById('dashChannelTop').innerHTML = cTop.map(c => {
       const m = c.sales > 0 ? (c.profit/c.sales*100) : 0;
@@ -1083,14 +1082,20 @@ if ('serviceWorker' in navigator) {
       return `<div class="lrow" data-ch="${c.name}"><div class="lic">${ab}</div><div class="lmain"><div class="lnm">${c.name}</div><div class="lsub">${fmtN(c.qty)}건 · 이익 ${fmtK(c.profit)} · 이익률 ${roi.toFixed(1)}%</div><div class="lbar"><i style="width:${c.sales/cMax*100}%"></i></div></div><div class="lval"><div class="lamt">${fmtK(c.sales)}</div><div class="lpct ${m>=0?'up':'down'}">이익 ${m.toFixed(1)}%</div></div></div>`;
     }).join('');
     document.querySelectorAll('#dashChannelTop .lrow').forEach(row => row.addEventListener('click', () => {
-      haptic(); const c = (D.channels||[]).find(x => x.name === row.dataset.ch);
+      haptic(); const c = (D.channels26||D.channels||[]).find(x => x.name === row.dataset.ch);
       if (c) openChannelModal(c);
     }));
 
     // v2.46.23: 최근 거래 Top 15 (PC와 동일성)
     const recent15El = document.getElementById('dashRecent15');
     if (recent15El) {
-      const recentSrc = (TXN?.transactions || TXN?.items || TXN || []).slice(0, 15);
+      // v2.46.25: 2026년만 + Top 5
+      const allTx = (TXN?.transactions || TXN?.items || TXN || []);
+      const tx26 = allTx.filter(t => {
+        const d = t.date || t.settle_date || t.sale_date || t.ym || '';
+        return String(d).startsWith('2026');
+      });
+      const recentSrc = (tx26.length ? tx26 : allTx).slice(0, 5);
       if (recentSrc.length) {
         recent15El.innerHTML = recentSrc.map(t => {
           const ab = (t.brand||'?').slice(0,2);
@@ -1110,8 +1115,8 @@ if ('serviceWorker' in navigator) {
       else {
         favEl.style.display = 'flex';
         favEl.innerHTML = FAVS.slice(0, 10).map(nm => {
-          const b = (D.brands||[]).find(x => x.name === nm);
-          const c = (D.channels||[]).find(x => x.name === nm);
+          const b = (D.brands26||D.brands||[]).find(x => x.name === nm);
+          const c = (D.channels26||D.channels||[]).find(x => x.name === nm);
           if (b) {
             return `<div class="insight up" data-fav-b="${nm}"><div class="l">★ ${nm}</div><div class="t">${fmtK(b.sales)}</div><div class="d">이익 ${fmtK(b.profit)} · ${fmtN(b.qty)}건</div></div>`;
           }
@@ -1121,11 +1126,11 @@ if ('serviceWorker' in navigator) {
           return '';
         }).join('');
         favEl.querySelectorAll('[data-fav-b]').forEach(el => el.addEventListener('click', () => {
-          haptic(); const b = (D.brands||[]).find(x => x.name === el.dataset.favB);
+          haptic(); const b = (D.brands26||D.brands||[]).find(x => x.name === el.dataset.favB);
           if (b) openBrandModal(b);
         }));
         favEl.querySelectorAll('[data-fav-c]').forEach(el => el.addEventListener('click', () => {
-          haptic(); const c = (D.channels||[]).find(x => x.name === el.dataset.favC);
+          haptic(); const c = (D.channels26||D.channels||[]).find(x => x.name === el.dataset.favC);
           if (c) openChannelModal(c);
         }));
       }
@@ -1163,15 +1168,15 @@ if ('serviceWorker' in navigator) {
       else {
         rcEl.style.display = 'flex';
         rcEl.innerHTML = '<div class="insight" style="border-left-color:var(--dim);"><div class="l">최근 본 항목</div><div class="t" style="font-size:11px;color:var(--dim);">↓ 클릭해서 다시 보기</div></div>' + RECENTS.slice(0, 8).map(r => {
-          const item = r.kind === 'brand' ? (D.brands||[]).find(x => x.name === r.name) : (D.channels||[]).find(x => x.name === r.name);
+          const item = r.kind === 'brand' ? (D.brands26||D.brands||[]).find(x => x.name === r.name) : (D.channels26||D.channels||[]).find(x => x.name === r.name);
           if (!item) return '';
           return `<div class="insight" data-rc="${r.kind}|${r.name}" style="border-left-color:var(--gold);"><div class="l">${r.kind === 'brand' ? '브랜드' : '채널'}</div><div class="t">${r.name}</div><div class="d">${fmtK(item.sales)} · 이익 ${item.sales>0?(item.profit/item.sales*100).toFixed(1):'0'}%</div></div>`;
         }).join('');
         rcEl.querySelectorAll('[data-rc]').forEach(el => el.addEventListener('click', () => {
           haptic();
           const [k, n] = el.dataset.rc.split('|');
-          if (k === 'brand') { const b = (D.brands||[]).find(x => x.name === n); if (b) openBrandModal(b); }
-          else { const c = (D.channels||[]).find(x => x.name === n); if (c) openChannelModal(c); }
+          if (k === 'brand') { const b = (D.brands26||D.brands||[]).find(x => x.name === n); if (b) openBrandModal(b); }
+          else { const c = (D.channels26||D.channels||[]).find(x => x.name === n); if (c) openChannelModal(c); }
         }));
       }
     }
@@ -1230,14 +1235,14 @@ if ('serviceWorker' in navigator) {
     let titleText = '';
     if (SET_TAB === 'channel') {
       titleText = '채널별 정산';
-      items = (D.channels || []).map(c => ({
+      items = (D.channels26 || D.channels || []).map(c => ({
         key: c.name, sub: `${fmtN(c.qty)}건 · 이익 ${fmtK(c.profit)}`,
         amt: c.settle, head: c.sales, profit: c.profit, qty: c.qty,
         margin: c.sales > 0 ? c.profit/c.sales*100 : 0, isBrand: false,
       }));
     } else if (SET_TAB === 'month') {
       titleText = '월별 정산';
-      items = (D.months || []).slice().reverse().map(m => {
+      items = (D.months26 || D.months || []).slice().reverse().map(m => {
         const yoy = m.yoyDelta != null ? ` · YoY ${m.yoyDelta>=0?'+':''}${m.yoyDelta.toFixed(1)}%` : '';
         return {
           key: `${m.ym.slice(0,4)}년 ${m.ym.slice(4,6)}월`,
@@ -1249,7 +1254,7 @@ if ('serviceWorker' in navigator) {
       });
     } else if (SET_TAB === 'brand') {
       titleText = '브랜드별 정산';
-      items = (D.brands || []).map(b => ({
+      items = (D.brands26 || D.brands || []).map(b => ({
         key: b.name, sub: `${fmtN(b.qty)}건 · 이익 ${fmtK(b.profit)}`,
         amt: b.settle, head: b.sales, profit: b.profit, qty: b.qty,
         margin: b.sales > 0 ? b.profit/b.sales*100 : 0, isBrand: true,
@@ -1481,15 +1486,53 @@ if ('serviceWorker' in navigator) {
           }).join('');
           const codeSet = new Set(model.sizes.map(s=>s.c));
           const codesList = [...codeSet].join(', ');
+          // v2.46.25: 단일 판매 이익률 계산기
+          const avgCost = model.unitPriceMin || 0;
+          const profitCalcHtml = `
+            <div class="be-card" style="background:linear-gradient(135deg,rgba(245,158,11,0.10),rgba(245,158,11,0.02));border:1px solid rgba(245,158,11,0.3);">
+              <div class="be-top"><div class="be-name">💰 단일 판매 이익률 계산기</div></div>
+              <div style="margin-top:10px;">
+                <label style="font-size:11px;color:var(--soft);display:block;margin-bottom:6px;">판매가 입력 (네이버 채널 기준)</label>
+                <input id="calcSellPrice" type="number" inputmode="numeric" placeholder="예: 1000000" value="${avgCost ? Math.round(avgCost * 1.45) : ''}" style="width:100%;padding:10px 12px;border:1px solid rgba(245,158,11,0.4);border-radius:9px;background:var(--bg);color:var(--ink);font-family:'MonoLocal',monospace;font-size:15px;">
+              </div>
+              <div id="calcResult" style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;font-family:'MonoLocal',monospace;font-size:12px;">
+                원가 입력 또는 판매가 입력 시 자동 계산
+              </div>
+            </div>`;
           openModal(`${model.brand} ${model.model}`, `
             <div class="be-card"><div class="be-top"><div class="be-name">총 재고 / 입고</div><div class="be-diff ${model.stockTotal===0?'down':'up'}">${fmtN(model.stockTotal)} / ${fmtN(model.initialTotal)}</div></div><div class="be-prog"><i style="width:${model.sellPct}%"></i></div><div class="be-foot"><span>소진율</span><b>${model.sellPct.toFixed(1)}%</b></div></div>
-            <div class="be-card"><div class="be-top"><div class="be-name">현재 재고 자산</div><div class="be-diff up">${fmtK(model.stockValue)}</div></div><div class="be-foot"><span>최초입고 금액</span><b>${fmtK(model.initialValue)}</b></div></div>
+            <div class="be-card"><div class="be-top"><div class="be-name">현재 재고 자산</div><div class="be-diff up">${fmtK(model.stockValue)}</div></div><div class="be-foot"><span>원가 (입고 단가)</span><b>${fmtK(avgCost)}</b></div></div>
+            ${profitCalcHtml}
             <div class="be-card"><div class="be-top"><div class="be-name">단가 범위</div><div class="be-diff">${fmtK(model.unitPriceMin||0)}${model.unitPriceMax && model.unitPriceMax!==model.unitPriceMin ? '~'+fmtK(model.unitPriceMax) : ''}</div></div><div class="be-foot"><span>대표 코드</span><b>${model.code}</b></div></div>
             <div class="be-card"><div class="be-top"><div class="be-name">신/구 코드 통합</div><div class="be-diff" style="font-size:12px;">${codeSet.size}개</div></div><div class="be-foot" style="flex-wrap:wrap;"><span style="font-family:'MonoLocal',monospace;font-size:11px;color:var(--soft);word-break:break-all;">${codesList}</span></div></div>
             ${model.supplier ? `<div class="be-card"><div class="be-top"><div class="be-name">공급처</div><div class="be-diff" style="font-size:14px;">${model.supplier}</div></div></div>` : ''}
             <div class="sec-head" style="margin-top:14px;"><span class="sec-title">사이즈별 (${model.sizes.length})</span><span class="sec-more">신/구 코드 모두</span></div>
             <div class="list">${sizesHtml}</div>
           `, {share:{title:`${model.brand} ${model.model}`, text:`재고 ${fmtN(model.stockTotal)}개 · ${codeSet.size}개 코드 통합 · 자산 ${fmtK(model.stockValue)}`}});
+          // 판매가 입력 이벤트
+          setTimeout(() => {
+            const inp = document.getElementById('calcSellPrice');
+            const out = document.getElementById('calcResult');
+            if (!inp || !out) return;
+            function compute() {
+              const sale = parseFloat(inp.value) || 0;
+              if (sale <= 0 || avgCost <= 0) { out.textContent = '판매가/원가 둘 다 필요'; return; }
+              // 일반 EC: 정산 = sales × 0.8824 (네이버), 이익 = settle - sales/1.1*0.1 - cost
+              const settle = sale * 0.8824;
+              const profit = settle - (sale/1.1*0.1) - avgCost;  // 일반 EC 공식
+              const profitRate = (profit / avgCost) * 100;
+              const marginRate = (profit / sale) * 100;
+              out.innerHTML = `
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+                  <div><span style="color:var(--soft);">정산 (88%):</span> <b style="color:#1a73e8;">${fmtK(settle)}</b></div>
+                  <div><span style="color:var(--soft);">이익:</span> <b style="color:#f59e0b;">${fmtK(profit)}</b></div>
+                  <div><span style="color:var(--soft);">이익률 (원가):</span> <b style="color:#f59e0b;font-size:14px;">${profitRate.toFixed(1)}%</b></div>
+                  <div><span style="color:var(--soft);">마진 (매출):</span> <b style="color:var(--gold-deep);">${marginRate.toFixed(1)}%</b></div>
+                </div>`;
+            }
+            inp.addEventListener('input', compute);
+            compute();
+          }, 100);
           return;
         }
         // fallback: 단일 SKU 모달 (모델 못 찾음)
@@ -1673,19 +1716,19 @@ if ('serviceWorker' in navigator) {
     if (!MD) { toast('MD 데이터 없음'); return; }
     const s = MD.summary;
     const mar = s.sales>0 ? (s.sales-s.cost)/s.sales*100 : 0;
-    const months = MD.months || [];
+    const months = MD.months26 || D.months || [];
     const recentMo = months.slice(-12);
     const moMax = Math.max(1, ...recentMo.map(m=>m.sales));
     const moBars = recentMo.map(m => {
       const h = Math.round(m.sales/moMax*100);
       return `<div class="bar-col"><div class="bar-wrap"><div class="bar" style="height:${h}%"></div></div><div class="bar-lbl">${m.ym.slice(2,4)}/${m.ym.slice(4,6)}</div></div>`;
     }).join('');
-    const brHtml = (MD.brands||[]).slice(0,10).map(b => {
+    const brHtml = (MD.brands26||D.brands||[]).slice(0,10).map(b => {
       const max = MD.brands[0].sales;
       const pct = max>0?b.sales/max*100:0;
       return `<div class="lrow"><div class="lic" style="${brandStyle(b.name)}">${logoFor(b.name)}</div><div class="lmain"><div class="lnm">${b.name}</div><div class="lsub">${fmtN(b.qty)}건</div><div class="lbar"><i style="width:${pct}%"></i></div></div><div class="lval"><div class="lamt">${fmtK(b.sales)}</div></div></div>`;
     }).join('');
-    const chHtml = (MD.channels||[]).slice(0,10).map(c => {
+    const chHtml = (MD.channels26||D.channels||[]).slice(0,10).map(c => {
       const max = MD.channels[0].sales;
       const pct = max>0?c.sales/max*100:0;
       return `<div class="lrow"><div class="lic">${(c.name||'?').slice(0,2)}</div><div class="lmain"><div class="lnm">${c.name}</div><div class="lsub">${fmtN(c.qty)}건</div><div class="lbar"><i style="width:${pct}%"></i></div></div><div class="lval"><div class="lamt">${fmtK(c.sales)}</div></div></div>`;
