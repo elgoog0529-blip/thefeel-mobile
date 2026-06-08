@@ -1647,11 +1647,47 @@ if ('serviceWorker' in navigator) {
         setN('dsNaverTs', m < 1 ? '방금 전' : (m < 60 ? `${m}분 전` : `${Math.floor(m/60)}시간 전`));
       }
     }
-    // 일별 / 월별 list — PC 매출명세서 매일 import 데이터 (mobile data.json에 안 들어가니 안내)
+    // v2.46.28: 일별 매출명세 — DAILY.days (최근 30일) + 막대 차트
     const list = document.getElementById('dsDailyList');
-    if (list) list.innerHTML = '<div class="empty" style="padding:20px; color:var(--dim); font-size:12px; text-align:center;">📅 일별 매출명세서는 PC앱에서 매일 import 후<br>다음 모바일 갱신 시 표시됩니다.<br><br>실시간 정산은 위 ⚡ 카드 또는 대시보드에서 확인</div>';
+    if (list) {
+      const days = (DAILY?.days || []).slice(-14).reverse();  // 최근 14일
+      if (days.length) {
+        const maxSales = Math.max(...days.map(d=>d.sales||0));
+        list.innerHTML = days.map(day => {
+          const w = maxSales > 0 ? Math.round((day.sales||0)/maxSales*100) : 0;
+          const dParts = (day.date||'').split('-');
+          const lbl = dParts.length === 3 ? `${dParts[1]}/${dParts[2]}` : day.date;
+          return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);">
+            <div style="min-width:42px;font-family:'MonoLocal',monospace;font-size:12px;color:var(--ink);font-weight:600;">${lbl}</div>
+            <div style="flex:1;position:relative;height:18px;background:rgba(212,175,55,0.07);border-radius:4px;overflow:hidden;">
+              <div style="position:absolute;left:0;top:0;height:100%;width:${w}%;background:linear-gradient(90deg,var(--gold,#d4af37),var(--gold-deep,#b8941f));border-radius:4px;transition:width .4s ease;"></div>
+            </div>
+            <div style="min-width:84px;text-align:right;font-family:'MonoLocal',monospace;font-size:12px;font-weight:600;color:var(--ink);">${fmtK(day.sales||0)}</div>
+            <div style="min-width:36px;text-align:right;font-size:10px;color:var(--soft);">${fmtN(day.qty||0)}건</div>
+          </div>`;
+        }).join('');
+      } else {
+        list.innerHTML = '<div class="empty" style="padding:20px;color:var(--dim);font-size:12px;text-align:center;">일별 데이터 로드 중…</div>';
+      }
+    }
+    // 월별 list
     const ml = document.getElementById('dsMonthlyList');
-    if (ml) ml.innerHTML = '';
+    if (ml) {
+      const ms = (D.months26 || D.months || []).slice().reverse();
+      const maxM = Math.max(1, ...ms.map(m=>m.sales||0));
+      ml.innerHTML = ms.map(m => {
+        const w = Math.round((m.sales||0)/maxM*100);
+        const lbl = (m.ym||'').slice(4,6) + '월';
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);">
+          <div style="min-width:42px;font-family:'MonoLocal',monospace;font-size:12px;font-weight:600;">${lbl}</div>
+          <div style="flex:1;position:relative;height:18px;background:rgba(26,115,232,0.08);border-radius:4px;overflow:hidden;">
+            <div style="position:absolute;left:0;top:0;height:100%;width:${w}%;background:linear-gradient(90deg,#1a73e8,#0c47b7);border-radius:4px;"></div>
+          </div>
+          <div style="min-width:84px;text-align:right;font-family:'MonoLocal',monospace;font-size:12px;font-weight:600;">${fmtK(m.sales||0)}</div>
+          <div style="min-width:36px;text-align:right;font-size:10px;color:var(--soft);">${fmtN(m.qty||0)}</div>
+        </div>`;
+      }).join('');
+    }
   }
 
   function applyBeFilter() {
