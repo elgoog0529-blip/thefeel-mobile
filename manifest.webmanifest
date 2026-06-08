@@ -1,0 +1,16 @@
+{
+  "name": "더필코리아",
+  "short_name": "더필코리아",
+  "description": "더필코리아 통합 운영 시스템 — 모바일",
+  "start_url": "./",
+  "scope": "./",
+  "id": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eef2fb",
+  "theme_color": "#1b64da",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

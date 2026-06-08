@@ -1,0 +1,43 @@
+{
+  "version": "v2-multiuser",
+  "algo": "AES-256-GCM",
+  "kdf": "PBKDF2-SHA256",
+  "iters": 250000,
+  "salt": "dGhlZmVlbC1rb3JlYS12Mi1zYWx0LTIwMjY=",
+  "users": [
+    {
+      "userHash": "55e018b8075afd51a6cb81a4a96a04b12ff15d7f3d91d777a46c7922d8809089",
+      "wrappedKey": "XiNsmiwlT+QyFUqaInzlDuEi059+yWB3Zfpvz/sxVcU3Hvzyi0lDqoW2GJKLH1Ue",
+      "wrapIv": "ePaRzJY7TL3rVKaU"
+    },
+    {
+      "userHash": "cf4f3cfbcb8b1b76c51b48fec78540624c40ddfb19ef4cc534e3dae83b58fbb7",
+      "wrappedKey": "Hsr2kz5KQ9fS6Z5WhPWNbbrDMLsNYwnb22eVkMbyb8dNPqtDis/PTruPetqsUw4c",
+      "wrapIv": "Fkqv8nTTNZVNT29B"
+    },
+    {
+      "userHash": "4af8648177a37f9c2b6f68eed11d493d8ce82d7d0df2099b45d1b62c927371c2",
+      "wrappedKey": "fenswW+1Siu6qsAzy/fBKI/1gcFkbfhosnY/5iFAkByEH+HWnLOiUHI9D/19VHWy",
+      "wrapIv": "AKPu1lGhg8v1caz5"
+    },
+    {
+      "userHash": "9f1048adc387f423cc1282d0f2e5e4137e5206a76deca514534fb0577ef457b6",
+      "wrappedKey": "kuD5g1K0MV1P7tYChjDjeP7xDAqy/DC/PsU+Fn7keD4effsg00X+yXsG1Xnxe0Qw",
+      "wrapIv": "mBP3oH+D67YEdrdT"
+    },
+    {
+      "userHash": "54fa3260ad8a8ce02b79011aea960f16f6a308698113ab311db49c7500c4921b",
+      "wrappedKey": "e04wk9WXEFJu77RgMJ3Nts9J9yTDZL1SjNzn2+cu9NsDcCdeJTInX6R1hpJTpblW",
+      "wrapIv": "T86v8mV8gQtXP6K2"
+    }
+  ],
+  "files": {
+    "data.json": "secure/data.enc",
+    "inventory.json": "secure/inventory.enc",
+    "md.json": "secure/md.enc",
+    "transactions.json": "secure/transactions.enc",
+    "daily.json": "secure/daily.enc",
+    "naver-realtime.json": "secure/naver-realtime.enc"
+  },
+  "createdAt": "2026-06-08T00:45:52.099Z"
+}
