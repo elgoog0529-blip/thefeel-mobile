@@ -496,14 +496,29 @@ if ('serviceWorker' in navigator) {
         <div class="hero-mini" id="dsHeroMini2"></div>
       </div>
 
-      <!-- ⚡ 실시간 정산 (Cloudflare API) -->
-      <div id="dsRtMini" class="hidden" style="background:linear-gradient(135deg, #0c9460, #1b64da); color:#fff; border-radius:14px; padding:14px 16px; margin-bottom:14px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-          <span style="font-size:10px; letter-spacing:0.14em; color:rgba(255,255,255,0.9); text-transform:uppercase; font-weight:700;">⚡ 오늘 실시간 (API)</span>
-          <button id="dsRtMiniRefresh" style="background:#fff; color:#0c9460; border:none; border-radius:999px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer;">↻</button>
+      <!-- v2.46.21: 네이버 실시간 — 매출명세서 화면 (오늘 결제 + 예상 정산/이익) -->
+      <div id="dsNaverCard" style="background:linear-gradient(135deg,rgba(3,199,90,0.14),rgba(26,115,232,0.06));border:1px solid rgba(3,199,90,0.30);border-radius:14px;padding:14px;margin-bottom:14px;display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#03c75a;animation:pulse 1.5s infinite;"></span>
+            <span style="font-size:12px;font-weight:700;color:#02a647;letter-spacing:0.5px;">실시간 — 네이버</span>
+          </div>
+          <span id="dsNaverTs" style="font-size:10px;color:var(--soft);">—</span>
         </div>
-        <div id="dsRtMiniAmt" style="font-family:'MonoLocal',monospace; font-size:24px; font-weight:700; letter-spacing:-0.02em;">—</div>
-        <div id="dsRtMiniSub" style="font-size:11px; color:rgba(255,255,255,0.85); margin-top:3px;">—</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;">
+          <div style="padding:9px;background:rgba(255,255,255,0.06);border-radius:9px;">
+            <div style="font-size:9.5px;color:var(--soft);">오늘 매출</div>
+            <div id="dsNaverAmt" style="font-size:14px;font-weight:700;color:#02a647;font-family:'MonoLocal',monospace;margin-top:2px;">—</div>
+          </div>
+          <div style="padding:9px;background:rgba(255,255,255,0.06);border-radius:9px;">
+            <div style="font-size:9.5px;color:var(--soft);">예상 정산 88%</div>
+            <div id="dsNaverEst" style="font-size:14px;font-weight:700;color:#1a73e8;font-family:'MonoLocal',monospace;margin-top:2px;">—</div>
+          </div>
+          <div style="padding:9px;background:rgba(255,255,255,0.06);border-radius:9px;">
+            <div style="font-size:9.5px;color:var(--soft);">예상 이익 28%</div>
+            <div id="dsNaverProfit" style="font-size:14px;font-weight:700;color:#f59e0b;font-family:'MonoLocal',monospace;margin-top:2px;">—</div>
+          </div>
+        </div>
       </div>
 
       <div class="sec-head"><span class="sec-title">일별 매출명세 (최근 14일)</span></div>
@@ -991,16 +1006,17 @@ if ('serviceWorker' in navigator) {
     if (!D) return;
     // v2.46.6: 대시보드 = 26년 매출 기준 (누적은 정산 화면에서)
     const r = D.recent2026, t = D.total;
-    // v2.46.18: 이익률 = profit/cost (사용자 룰)
+    // v2.46.21: hero = 전체 누적 매출, 이익률 = profit/cost (사용자 룰)
+    const profitRate = t.cost > 0 ? (t.profit/t.cost*100) : 0;
     const rProfitRate = r.cost > 0 ? (r.profit/r.cost*100) : 0;
     const avgTicket = r.rows > 0 ? r.sales / r.rows : 0;
-    document.getElementById('dashPeriod').textContent = '2026';
-    document.getElementById('dashAmount').textContent = fmtK(r.sales);
-    document.getElementById('dashDelta').textContent = `이익 ${fmtK(r.profit)} · 이익률 ${rProfitRate.toFixed(1)}%`;
+    document.getElementById('dashPeriod').textContent = 'ALL';
+    document.getElementById('dashAmount').textContent = fmtK(t.sales);
+    document.getElementById('dashDelta').textContent = `이익 ${fmtK(t.profit)} · 원가 ${fmtK(t.cost)} · 이익률 ${profitRate.toFixed(1)}%`;
     document.getElementById('dashMini').innerHTML = `
-      <div class="m"><div class="l">2026 정산</div><div class="v">${fmtK(r.settle)}</div></div>
-      <div class="m"><div class="l">2026 거래</div><div class="v">${fmtN(r.rows)}</div></div>
-      <div class="m"><div class="l">평균 객단가</div><div class="v">${fmtK(avgTicket)}</div></div>
+      <div class="m"><div class="l">전체 정산</div><div class="v">${fmtK(t.settle)}</div></div>
+      <div class="m"><div class="l">2026 매출</div><div class="v">${fmtK(r.sales)}</div></div>
+      <div class="m"><div class="l">2026 이익률</div><div class="v">${rProfitRate.toFixed(1)}%</div></div>
     `;
 
     const activeBrands = (D.brands||[]).filter(b => b.qty > 0).length;
@@ -1529,6 +1545,20 @@ if ('serviceWorker' in navigator) {
       <div class="m"><div class="l">원가</div><div class="v">${fmtK(t.cost||0)}</div></div>
       <div class="m"><div class="l">거래</div><div class="v">${fmtN(t.rows||0)}</div></div>
     `;
+    // v2.46.21: 네이버 실시간 카드 (매출명세서 화면)
+    const dsCard = document.getElementById('dsNaverCard');
+    if (dsCard && NAVER_RT?.today) {
+      dsCard.style.display = 'block';
+      const naAmt = NAVER_RT.today.totalAmount || 0;
+      const setN = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+      setN('dsNaverAmt', fmtK(naAmt));
+      setN('dsNaverEst', fmtK(Math.round(naAmt * 0.8824)));
+      setN('dsNaverProfit', fmtK(Math.round(naAmt * 0.1722)));
+      if (NAVER_RT.ts) {
+        const m = Math.floor((Date.now() - new Date(NAVER_RT.ts).getTime()) / 60000);
+        setN('dsNaverTs', m < 1 ? '방금 전' : (m < 60 ? `${m}분 전` : `${Math.floor(m/60)}시간 전`));
+      }
+    }
     // 일별 / 월별 list — PC 매출명세서 매일 import 데이터 (mobile data.json에 안 들어가니 안내)
     const list = document.getElementById('dsDailyList');
     if (list) list.innerHTML = '<div class="empty" style="padding:20px; color:var(--dim); font-size:12px; text-align:center;">📅 일별 매출명세서는 PC앱에서 매일 import 후<br>다음 모바일 갱신 시 표시됩니다.<br><br>실시간 정산은 위 ⚡ 카드 또는 대시보드에서 확인</div>';
