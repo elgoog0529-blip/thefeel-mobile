@@ -1381,10 +1381,11 @@ if ('serviceWorker' in navigator) {
     document.getElementById('invValue').textContent = fmtK(inv.total_value);
     const sellThr = (inv.total_initial||0) > 0 ? (inv.total_sold||0)/inv.total_initial*100 : 0;
     document.getElementById('invMeta').textContent = `${fmtN(inv.total_stock)}개 보유 · 누적 소진 ${sellThr.toFixed(1)}%`;
+    // v2.46.24: 4 카드 제거 (v2.46.20) 후 null guard 필요
     const initEl = document.getElementById('invInitial'); if (initEl) initEl.textContent = fmtK(inv.total_initial||0);
     const soldEl = document.getElementById('invSold'); if (soldEl) soldEl.textContent = fmtK(inv.total_sold||0);
-    document.getElementById('invSku').textContent = fmtN(inv.total_items);
-    document.getElementById('invQty').textContent = fmtN(inv.total_stock);
+    const skuEl  = document.getElementById('invSku');     if (skuEl)  skuEl.textContent = fmtN(inv.total_items);
+    const qtyEl  = document.getElementById('invQty');     if (qtyEl)  qtyEl.textContent = fmtN(inv.total_stock);
     applyInvFilter();
   }
 
