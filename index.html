@@ -414,6 +414,10 @@ if ('serviceWorker' in navigator) {
 
       <div class="sec-head"><span class="sec-title">채널 TOP 5</span><span class="sec-more" data-jump="settlement" data-pill="channel">전체 ›</span></div>
       <div class="list" id="dashChannelTop"></div>
+
+      <!-- v2.46.23: 최근 거래 Top 15 (PC와 동일성) -->
+      <div class="sec-head"><span class="sec-title">최근 거래 (Top 15)</span><span class="sec-more">정산+MD 통합</span></div>
+      <div class="list" id="dashRecent15"></div>
     </div>
 
     <!-- ===================== 정산 ===================== -->
@@ -1082,6 +1086,23 @@ if ('serviceWorker' in navigator) {
       haptic(); const c = (D.channels||[]).find(x => x.name === row.dataset.ch);
       if (c) openChannelModal(c);
     }));
+
+    // v2.46.23: 최근 거래 Top 15 (PC와 동일성)
+    const recent15El = document.getElementById('dashRecent15');
+    if (recent15El) {
+      const recentSrc = (TXN?.transactions || TXN?.items || TXN || []).slice(0, 15);
+      if (recentSrc.length) {
+        recent15El.innerHTML = recentSrc.map(t => {
+          const ab = (t.brand||'?').slice(0,2);
+          const amt = t.sales || t.amount || 0;
+          const profit = t.profit || 0;
+          const d = t.date || t.settle_date || t.sale_date || '';
+          return `<div class="lrow"><div class="lic" style="${brandStyle(t.brand||'')}">${ab}</div><div class="lmain"><div class="lnm" style="white-space:normal;font-size:12.5px;">${(t.product||t.product_name||'').slice(0,40)}</div><div class="lsub">${d} · ${t.channel||t.market||''} · ${t.brand||''}</div></div><div class="lval"><div class="lamt">${fmtK(amt)}</div><div class="lpct ${profit>=0?'up':'down'}">${profit>=0?'+':''}${fmtK(profit)}</div></div></div>`;
+        }).join('');
+      } else {
+        recent15El.innerHTML = '<div class="empty" style="padding:14px;color:var(--soft);font-size:12px;text-align:center;">거래 데이터 로드 중…</div>';
+      }
+    }
     // 즐겨찾기 chips
     const favEl = document.getElementById('favChips');
     if (favEl) {
