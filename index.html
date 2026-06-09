@@ -469,6 +469,9 @@ if ('serviceWorker' in navigator) {
           20%, 40%, 60%, 80% { transform: rotate(12deg); }
         }
         .theme-btn.shake { animation: bellShake 0.9s ease-in-out; transform-origin: 50% 20%; }
+        /* v2.47.42: 새로고침 회전 */
+        @keyframes refreshSpin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+        #freshChip.refresh-spin { animation: refreshSpin 0.8s ease-in-out; }
       </style>
 
       <div class="hero-card">
@@ -1068,9 +1071,25 @@ if ('serviceWorker' in navigator) {
     _notifUpdateDot();
     const arr = _notifLoad();
     const _notifTarget = {'order':'breakeven','reorder':'inventory','fx':'dashboard','info':'breakeven','update':'settings','ip':'settings'};
+    // v2.47.42: 일별 그룹화
+    const today0 = new Date(); today0.setHours(0,0,0,0);
+    const yest0 = today0.getTime() - 86400000;
+    function _notifGroup(ts) {
+      if (ts >= today0.getTime()) return '오늘';
+      if (ts >= yest0) return '어제';
+      return '이전';
+    }
+    let lastGroup = null;
     const html = arr.length === 0 ?
       '<div style="text-align:center;color:var(--soft);padding:32px 16px;">아직 알림이 없습니다</div>' :
-      arr.map((n, idx) => `
+      arr.map((n, idx) => {
+        const g = _notifGroup(n.ts);
+        let header = '';
+        if (g !== lastGroup) {
+          header = `<div style="font-size:10px;color:var(--soft);font-weight:700;letter-spacing:0.8px;text-transform:uppercase;padding:8px 0 4px;${idx > 0 ? 'margin-top:4px;' : ''}">${g}</div>`;
+          lastGroup = g;
+        }
+        return header + `
         <div class="notif-row" data-tgt="${_notifTarget[n.type]||''}" data-idx="${idx}" style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;align-items:flex-start;">
           <div style="font-size:20px;flex-shrink:0;">${_notifTypeIcon(n.type)}</div>
           <div style="flex:1;min-width:0;">
@@ -1079,8 +1098,8 @@ if ('serviceWorker' in navigator) {
             <div style="font-size:10px;color:var(--soft);margin-top:3px;font-family:'MonoLocal',monospace;">${_notifTimeAgo(n.ts)}</div>
           </div>
           <button class="notif-del" data-idx="${idx}" style="background:transparent;border:none;color:var(--soft);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:6px;flex-shrink:0;" title="삭제">✕</button>
-        </div>
-      `).join('');
+        </div>`;
+      }).join('');
     // v2.47.30: 이번 주 알림 요약
     const wkAgo = Date.now() - 7*24*60*60*1000;
     const wkArr = arr.filter(n => n.ts >= wkAgo);
@@ -3044,6 +3063,10 @@ if ('serviceWorker' in navigator) {
   // v2.47.25: freshChip 클릭 → 즉시 데이터 새로고침 (가장 자주 확인하는 위치)
   document.getElementById('freshChip')?.addEventListener('click', () => {
     haptic();
+    // v2.47.42: 회전 애니메이션
+    const chip = document.getElementById('freshChip');
+    chip.classList.add('refresh-spin');
+    setTimeout(() => chip.classList.remove('refresh-spin'), 800);
     toast('🔄 데이터 새로고침 중...', 'info', 1500);
     Promise.all([loadData(true), loadFx()]).then(() => {
       toast('✓ 최신 데이터 로드', 'success', 2000);
