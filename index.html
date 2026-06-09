@@ -999,18 +999,62 @@ if ('serviceWorker' in navigator) {
     '에이블리':'a-bly.com', '카카오':'kakao.com', '라쿠텐':'rakuten.com',
     '바이마':'buyma.com',
   };
+  // v2.47.77: 다중 로고 서비스 fallback chain — 브랜드별 진짜 로고 거의 100% 확보
+  // 우선순위: 1) 사용자 업로드 → 2) Clearbit → 3) DuckDuckGo Icons → 4) Google Favicon → 5) 약자
+  function _userLogo(name) {
+    try { const m = JSON.parse(localStorage.getItem('userBrandLogos') || '{}'); return m[name] || null; }
+    catch { return null; }
+  }
   function logoUrl(name, size = 128) {
     const domain = BRAND_DOMAINS[name];
     if (!domain) return null;
-    // Clearbit Logo API — 무료 B2B 서비스 (브랜드 공식 로고)
     return `https://logo.clearbit.com/${domain}?size=${size}`;
   }
-  function logoImgOrText(name, size = 36) {
-    const url = logoUrl(name, Math.max(64, size * 2));
-    if (url) {
-      return `<img src="${url}" alt="${name}" style="width:100%;height:100%;object-fit:contain;padding:14%;" onerror="this.outerHTML='${logoFor(name)}'">`;
+  function logoUrlsFallback(name, size = 128) {
+    const urls = [];
+    const userUrl = _userLogo(name);  // data URL 또는 외부 URL
+    if (userUrl) urls.push(userUrl);
+    const domain = BRAND_DOMAINS[name];
+    if (domain) {
+      urls.push(`https://logo.clearbit.com/${domain}?size=${size}`);
+      urls.push(`https://icons.duckduckgo.com/ip3/${domain}.ico`);
+      urls.push(`https://www.google.com/s2/favicons?domain=${domain}&sz=${Math.min(128, size)}`);
     }
-    return logoFor(name);
+    return urls;
+  }
+  function logoImgChain(name, size = 36) {
+    const urls = logoUrlsFallback(name, Math.max(64, size * 2));
+    if (urls.length === 0) return logoFor(name);
+    // onerror 체인 — 실패 시 다음 URL로 자동 전환
+    const buildOnError = (idx) => {
+      if (idx >= urls.length - 1) return `this.outerHTML='${logoFor(name).replace(/'/g,"\\'")}';`;
+      return `this.onerror=function(){${buildOnError(idx+1)}};this.src='${urls[idx+1].replace(/'/g,"\\'")}';`;
+    };
+    return `<img src="${urls[0]}" alt="${name}" style="width:100%;height:100%;object-fit:contain;padding:14%;" onerror="${buildOnError(0)}">`;
+  }
+  // 사용자가 브랜드 로고 직접 업로드 (data URL 저장)
+  async function userUploadBrandLogo(brandName) {
+    return new Promise(resolve => {
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = 'image/png,image/jpeg,image/svg+xml,image/webp';
+      inp.onchange = async (e) => {
+        const f = e.target.files?.[0];
+        if (!f) return resolve(false);
+        if (f.size > 500000) { toast('500KB 이하 이미지로 업로드해주세요', 'error'); return resolve(false); }
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const m = JSON.parse(localStorage.getItem('userBrandLogos') || '{}');
+            m[brandName] = reader.result;
+            localStorage.setItem('userBrandLogos', JSON.stringify(m));
+            toast(`✓ ${brandName} 로고 저장됨`, 'success', 2500);
+            resolve(true);
+          } catch (er) { toast('저장 실패: ' + er.message, 'error'); resolve(false); }
+        };
+        reader.readAsDataURL(f);
+      };
+      inp.click();
+    });
   }
 
   // ─── 햅틱 (설정으로 토글) — v2.47.35: 패턴 지원 ───
@@ -2194,8 +2238,12 @@ if ('serviceWorker' in navigator) {
   function openBrandModal(b) {
     addRecent('brand', b.name);
     const m = b.sales>0?b.profit/b.sales*100:0;
-    // v2.47.75: 모달 상단에 큰 브랜드 wordmark
-    const wordmarkHtml = `
+    // v2.47.76: 모달 상단에 실제 브랜드 로고 (Clearbit Logo API)
+    const officialLogoUrl = logoUrl(b.name, 256);
+    const wordmarkHtml = officialLogoUrl ? `
+      <div style="display:flex;align-items:center;justify-content:center;height:120px;border-radius:14px;margin-bottom:14px;background:#ffffff;box-shadow:0 8px 24px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(0,0,0,0.04);">
+        <img src="${officialLogoUrl}" alt="${b.name}" style="max-width:78%;max-height:78%;object-fit:contain;" onerror="this.parentElement.outerHTML='<div style=&quot;display:flex;align-items:center;justify-content:center;height:80px;border-radius:14px;margin-bottom:14px;${brandStyle(b.name, {serif:true}).replace(/"/g,'&quot;')}font-size:30px;letter-spacing:1.5px;&quot;>${logoFor(b.name)}</div>'">
+      </div>` : `
       <div style="display:flex;align-items:center;justify-content:center;height:80px;border-radius:14px;margin-bottom:14px;${brandStyle(b.name, {serif:true})}font-size:30px;letter-spacing:1.5px;text-shadow:0 2px 8px rgba(0,0,0,0.25);box-shadow:0 8px 24px rgba(0,0,0,0.10);">
         ${logoFor(b.name)}
       </div>`;
