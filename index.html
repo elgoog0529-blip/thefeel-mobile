@@ -3017,11 +3017,11 @@ if ('serviceWorker' in navigator) {
     }
     // 5분 이상 또는 없으면 fetch — 다중 API fallback
     if (cacheAge >= 5 * 60 * 1000 && navigator.onLine) {
-      // v2.47.22: GBP 추가 (영국 명품 - 버버리/스텔라/멀버리)
+      // v2.47.22: GBP 추가 / v2.47.60: CNY 추가 (중국 명품 구매대행 환산)
       const apis = [
-        { url: 'https://api.frankfurter.dev/v1/latest?from=KRW', parse: j => ({EUR:1/j.rates.EUR, USD:1/j.rates.USD, JPY:1/j.rates.JPY, GBP:1/j.rates.GBP}) },
-        { url: 'https://open.er-api.com/v6/latest/KRW', parse: j => ({EUR:1/j.rates.EUR, USD:1/j.rates.USD, JPY:1/j.rates.JPY, GBP:1/j.rates.GBP}) },
-        { url: 'https://api.exchangerate-api.com/v4/latest/KRW', parse: j => ({EUR:1/j.rates.EUR, USD:1/j.rates.USD, JPY:1/j.rates.JPY, GBP:1/j.rates.GBP}) },
+        { url: 'https://api.frankfurter.dev/v1/latest?from=KRW', parse: j => ({EUR:1/j.rates.EUR, USD:1/j.rates.USD, JPY:1/j.rates.JPY, GBP:1/j.rates.GBP, CNY:j.rates.CNY?1/j.rates.CNY:null}) },
+        { url: 'https://open.er-api.com/v6/latest/KRW', parse: j => ({EUR:1/j.rates.EUR, USD:1/j.rates.USD, JPY:1/j.rates.JPY, GBP:1/j.rates.GBP, CNY:j.rates.CNY?1/j.rates.CNY:null}) },
+        { url: 'https://api.exchangerate-api.com/v4/latest/KRW', parse: j => ({EUR:1/j.rates.EUR, USD:1/j.rates.USD, JPY:1/j.rates.JPY, GBP:1/j.rates.GBP, CNY:j.rates.CNY?1/j.rates.CNY:null}) },
       ];
       for (const api of apis) {
         try {
