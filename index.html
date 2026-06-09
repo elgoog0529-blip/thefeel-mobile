@@ -1069,6 +1069,9 @@ if ('serviceWorker' in navigator) {
           <button class="notif-del" data-idx="${idx}" style="background:transparent;border:none;color:var(--soft);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:6px;flex-shrink:0;" title="삭제">✕</button>
         </div>
       `).join('');
+    // v2.47.30: 이번 주 알림 요약
+    const wkAgo = Date.now() - 7*24*60*60*1000;
+    const wkArr = arr.filter(n => n.ts >= wkAgo);
     // v2.47.27: 카테고리별 카운트 chip
     const counts = arr.reduce((acc, n) => { acc[n.type] = (acc[n.type]||0)+1; return acc; }, {});
     const catLabels = {'order':'💰 주문', 'fx':'💱 환율', 'reorder':'🚨 발주', 'update':'🔄 업데이트', 'ip':'📍 IP', 'info':'ℹ️ 정보'};
@@ -1076,6 +1079,7 @@ if ('serviceWorker' in navigator) {
       `<span style="display:inline-block;padding:4px 10px;background:rgba(27,100,218,0.10);color:#1b64da;border-radius:10px;font-size:11px;font-weight:700;margin:0 4px 6px 0;">${catLabels[t]||t} ${c}</span>`
     ).join('');
     openModal('🔔 알림 센터' + (arr.length ? ` (${arr.length})` : ''), `
+      ${wkArr.length > 0 ? `<div style="background:rgba(27,100,218,0.06);border:1px solid rgba(27,100,218,0.14);border-radius:9px;padding:8px 11px;margin-bottom:10px;font-size:11px;color:#1b64da;">📊 이번 주 알림 <b>${wkArr.length}건</b> · 지난 7일</div>` : ''}
       ${arr.length > 0 ? `<div style="margin-bottom:12px;">${catChips}</div>` : ''}
       <div style="max-height:55vh;overflow-y:auto;">${html}</div>
       ${arr.length > 0 ? '<button id="notifClearBtn" style="width:100%;margin-top:14px;padding:11px;background:rgba(239,68,68,0.10);color:#dc2626;border:1px solid rgba(239,68,68,0.18);border-radius:9px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">모두 지우기</button>' : ''}
