@@ -1954,7 +1954,8 @@ if ('serviceWorker' in navigator) {
         haptic();
         const m = show[+row.dataset.i];
         if (!m) return;
-        const sizesHtml = m.sizes.map(s => `<div class="lrow" style="padding:10px 14px;"><div class="lic" style="background:var(--gold-soft);color:var(--gold-deep);font-size:11px;">${s.sz||'?'}</div><div class="lmain"><div class="lnm">${s.c}</div><div class="lsub">단가 ${fmtK(s.u)} · 최초입고 ${fmtN(s.i)}개</div></div><div class="lval"><div class="lamt">재고 ${fmtN(s.s)}</div><div class="lpct">${fmtK(s.stv)}</div></div></div>`).join('');
+        // v2.47.38: 사이즈별 행에 data-cost 추가 — 클릭 시 단일 판매 이익률 계산기 자동 단가 입력
+        const sizesHtml = m.sizes.map(s => `<div class="lrow sku-size-row" data-cost="${s.u||0}" data-code="${s.c||''}" style="padding:10px 14px;cursor:pointer;"><div class="lic" style="background:var(--gold-soft);color:var(--gold-deep);font-size:11px;">${s.sz||'?'}</div><div class="lmain"><div class="lnm">${s.c}</div><div class="lsub">단가 ${fmtK(s.u)} · 최초입고 ${fmtN(s.i)}개</div></div><div class="lval"><div class="lamt">재고 ${fmtN(s.s)}</div><div class="lpct">${fmtK(s.stv)}</div></div></div>`).join('');
         openModal(`${m.brand} ${m.model}`, `
           <div class="be-card"><div class="be-top"><div class="be-name">총 재고 / 입고</div><div class="be-diff ${m.stockTotal===0?'down':'up'}">${fmtN(m.stockTotal)} / ${fmtN(m.initialTotal)}</div></div><div class="be-prog"><i style="width:${m.sellPct}%"></i></div><div class="be-foot"><span>소진율</span><b>${m.sellPct.toFixed(1)}%</b></div></div>
           <div class="be-card"><div class="be-top"><div class="be-name">총 자산</div><div class="be-diff">${fmtK(m.stockValue)}</div></div><div class="be-foot"><span>단가 범위</span><b>${fmtK(m.unitPriceMin)}~${fmtK(m.unitPriceMax)}</b></div></div>
