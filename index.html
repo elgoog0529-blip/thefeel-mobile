@@ -396,6 +396,8 @@ if ('serviceWorker' in navigator) {
           </div>
         </div>
         <div id="naverBreakdown" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
+        <!-- v2.47.5: 24시간 결제 시각 분포 미니 차트 -->
+        <div id="naverHourly"></div>
         <!-- v2.47.3: AOV + 마지막 결제 + 평균 간격 -->
         <div id="naverAovRow" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:7px;font-size:10px;">
           <div style="padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:7px;text-align:center;">
@@ -948,6 +950,33 @@ if ('serviceWorker' in navigator) {
         setT('naverGap', gapMin < 60 ? gapMin+'분' : Math.floor(gapMin/60)+'시간 '+(gapMin%60)+'분');
       } else { setT('naverGap','—'); }
     } else { setT('naverLast','—'); setT('naverGap','—'); }
+
+    // v2.47.5: 24시간 결제 분포 미니 차트
+    const hourEl = document.getElementById('naverHourly');
+    if (hourEl && items.length > 0) {
+      const buckets = Array(24).fill(0);
+      items.forEach(it => {
+        if (!it.paymentDate) return;
+        const h = new Date(it.paymentDate).getHours();
+        if (!isNaN(h)) buckets[h] += (it.totalPaymentAmount || 0);
+      });
+      const maxV = Math.max(...buckets, 1);
+      const peakHr = buckets.indexOf(maxV);
+      hourEl.innerHTML = `
+        <div style="display:flex;align-items:end;gap:1px;height:34px;margin-top:8px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:1px;">
+          ${buckets.map((v,h) => {
+            const pct = maxV > 0 ? Math.max(2, v/maxV*100) : 2;
+            const isPeak = h === peakHr && v > 0;
+            const color = isPeak ? '#f59e0b' : (v > 0 ? '#03c75a' : 'rgba(255,255,255,0.08)');
+            return `<div style="flex:1;height:${pct}%;background:${color};border-radius:2px 2px 0 0;" title="${h}시: ${fmtK(v)}"></div>`;
+          }).join('')}
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:9px;color:var(--soft);">
+          <span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>23시</span>
+        </div>
+        <div style="font-size:10px;color:var(--soft);margin-top:3px;text-align:center;">⏰ 피크: <b style="color:#f59e0b;">${peakHr}시 ${fmtK(maxV)}</b></div>
+      `;
+    }
 
     // v2.47.3: 다음 정산 D-Day 카드 (네이버 D+3 영업일)
     const settleCard = document.getElementById('settleEtaCard');
