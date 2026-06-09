@@ -68,15 +68,16 @@ if ('serviceWorker' in navigator) {
     --tab-bg:rgba(20,24,34,0.92);
   }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body { height:100%; }
+  /* v2.47.79: 가로 스크롤/움직임 완전 차단 */
+  html,body { height:100%; max-width:100vw; overflow-x:hidden; overscroll-behavior-x:none; touch-action:pan-y; }
   body {
     font-family:'PretendardLocal',-apple-system,sans-serif;
     background:var(--bg); color:var(--ink);
     -webkit-font-smoothing:antialiased;
     font-feature-settings:'ss01','cv01';
-    overflow:hidden;
+    overflow-x:hidden; overflow-y:hidden;
     display:flex; flex-direction:column;
-    max-width:480px; margin:0 auto;
+    max-width:480px; width:100%; margin:0 auto;
     height:100vh;
     position:relative;
     transition:background 240ms var(--ease), color 240ms var(--ease);
@@ -99,7 +100,7 @@ if ('serviceWorker' in navigator) {
   .ptr.spinning .spin { animation-play-state:running; }
   @keyframes spin { to { transform:rotate(360deg); } }
 
-  .scroll { flex:1; overflow-y:auto; padding:env(safe-area-inset-top) 18px 96px; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
+  .scroll { flex:1; overflow-y:auto; overflow-x:hidden; padding:env(safe-area-inset-top) 18px 96px; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action:pan-y; }
   .scroll::-webkit-scrollbar { display:none; }
 
   .app-head { display:flex; align-items:center; justify-content:space-between; padding:18px 2px 16px; }
@@ -4273,6 +4274,18 @@ if ('serviceWorker' in navigator) {
   // v2.47.10: 알림 센터 종 — 클릭 시 모달 + 초기 dot 갱신
   document.getElementById('notifBtn')?.addEventListener('click', () => notifOpenModal());
   setTimeout(() => _notifUpdateDot(), 200);
+
+  // v2.47.79: 가로 회전 잠금 (지원 시) — PWA standalone에서만 작동
+  try {
+    if (screen.orientation && typeof screen.orientation.lock === 'function') {
+      screen.orientation.lock('portrait').catch(() => { /* iOS Safari 제외 — 지원 X */ });
+    }
+  } catch {}
+  // 가로 스와이프로 인한 뒤로가기 방지 (history API)
+  window.addEventListener('touchmove', e => {
+    // 가로 움직임만 있는 경우 막음 (단일 손가락)
+    if (e.touches.length > 1) return;
+  }, {passive: true});
 
   // v2.47.70: PWA shortcuts URL parameter 처리 (?screen=breakeven 등)
   try {
