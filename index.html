@@ -2215,6 +2215,9 @@ if ('serviceWorker' in navigator) {
             }
             inp.addEventListener('input', compute);
             if (inpCost) inpCost.addEventListener('input', compute);  // v2.47.41: 원가 변경도 재계산
+            // v2.47.71: focus 시 자동 select
+            inp.addEventListener('focus', () => inp.select());
+            if (inpCost) inpCost.addEventListener('focus', () => inpCost.select());
             compute();
           }, 100);
           return;
@@ -3172,6 +3175,9 @@ if ('serviceWorker' in navigator) {
         const v = parseFloat(krw.value)||0;
         res2.textContent = (v/ratePerUnit).toFixed(2) + ' ' + label;
       });
+      // v2.47.71: focus 시 자동 select (빠른 입력)
+      amt.addEventListener('focus', () => amt.select());
+      krw.addEventListener('focus', () => krw.select());
     }));
   }
 
