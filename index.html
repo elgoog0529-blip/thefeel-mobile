@@ -414,6 +414,20 @@ if ('serviceWorker' in navigator) {
           </div>
         </div>
       </div>
+      <!-- v2.47.8: 재발주 위험 카드 (sellPct >= 70 AND stock <= 5) -->
+      <div id="reorderCard" style="background:linear-gradient(135deg,rgba(239,68,68,0.10),rgba(245,158,11,0.05));border:1px solid rgba(239,68,68,0.25);border-radius:14px;padding:12px 14px;margin-bottom:12px;display:none;cursor:pointer;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:10px;color:#dc2626;font-weight:700;letter-spacing:0.5px;">🚨 재발주 필요 (잘 팔리는데 임박)</div>
+            <div id="reorderCount" style="font-size:14px;font-weight:700;color:#dc2626;margin-top:3px;">—</div>
+          </div>
+          <div style="text-align:right;">
+            <div id="reorderValue" style="font-size:13px;font-weight:700;color:#f59e0b;font-family:'MonoLocal',monospace;">—</div>
+            <div style="font-size:10px;color:var(--soft);margin-top:2px;">예상 매출 기회</div>
+          </div>
+        </div>
+        <div id="reorderTop3" style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;"></div>
+      </div>
       <!-- v2.47.3: 다음 정산 D-Day 카드 (네이버 D+3~8 기준) -->
       <div id="settleEtaCard" style="background:linear-gradient(135deg,rgba(245,158,11,0.10),rgba(27,100,218,0.05));border:1px solid rgba(245,158,11,0.25);border-radius:14px;padding:12px 14px;margin-bottom:12px;display:none;">
         <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -1156,6 +1170,36 @@ if ('serviceWorker' in navigator) {
 
   function renderDashboard() {
     if (!D) return;
+    // v2.47.8: 재발주 위험 카드 — 잘 팔리는데 재고 임박
+    try {
+      const reorderCard = document.getElementById('reorderCard');
+      if (reorderCard && INV && Array.isArray(INV.models)) {
+        const risk = INV.models.filter(m =>
+          m.sellPct >= 70 && m.stockTotal > 0 && m.stockTotal <= 5
+        ).sort((a,b) => b.sellPct - a.sellPct);
+        if (risk.length > 0) {
+          reorderCard.style.display = 'block';
+          const totalValue = risk.reduce((s,m) => s + (m.stockValue * 5), 0); // 5배 발주 가정한 매출 기회
+          document.getElementById('reorderCount').textContent = `${risk.length}개 모델 · 합계 재고 ${risk.reduce((s,m)=>s+m.stockTotal,0)}개`;
+          document.getElementById('reorderValue').textContent = fmtK(totalValue);
+          const top3 = risk.slice(0, 3).map(m =>
+            `<span style="padding:3px 8px;background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.18);border-radius:8px;font-size:10px;color:#dc2626;font-weight:600;">${(m.brand||'').slice(0,4)} ${(m.model||'').slice(0,15)} · ${m.stockTotal}개</span>`
+          ).join('');
+          document.getElementById('reorderTop3').innerHTML = top3 + (risk.length > 3 ? `<span style="padding:3px 8px;font-size:10px;color:var(--soft);">+${risk.length-3}</span>` : '');
+          reorderCard.onclick = () => {
+            haptic();
+            // 재고 화면으로 + 모델별 + 재고 적은 순 정렬
+            document.querySelector('.tab-item[data-screen="inventory"]')?.click();
+            setTimeout(() => {
+              document.querySelector('.pill[data-imode="model"]')?.click();
+            }, 100);
+          };
+        } else {
+          reorderCard.style.display = 'none';
+        }
+      }
+    } catch (e) { console.warn('reorderCard fail:', e.message); }
+
     // v2.46.6: 대시보드 = 26년 매출 기준 (누적은 정산 화면에서)
     const r = D.recent2026;
     // v2.46.25: 대시보드 = 2026년만 (사용자 요청 — 전체 누적 제거)
