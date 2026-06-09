@@ -3565,6 +3565,27 @@ if ('serviceWorker' in navigator) {
     }, 100);
   });
 
+  // ─── v2.47.36: localStorage 자동 정리 (90일 이상 fxHistory 삭제) ───
+  function _cleanupStorage() {
+    try {
+      // fxHistory — 90일 이상 자동 삭제
+      const hist = JSON.parse(localStorage.getItem('fxHistory') || '{}');
+      const cutoff = new Date(Date.now() - 90*24*60*60*1000).toISOString().slice(0,10);
+      let cleaned = false;
+      Object.keys(hist).forEach(date => {
+        if (date < cutoff) { delete hist[date]; cleaned = true; }
+      });
+      if (cleaned) localStorage.setItem('fxHistory', JSON.stringify(hist));
+      // 옛 search 기록 — 30일 이상 비활성 키 삭제
+      const keys = Object.keys(localStorage);
+      keys.filter(k => k.startsWith('weeklyShown:') || k.startsWith('fxAlertShown:') || k.startsWith('reorderNotified:')).forEach(k => {
+        const dateMatch = k.match(/(\d{4}-\d{2}-\d{2})/);
+        if (dateMatch && dateMatch[1] < cutoff) localStorage.removeItem(k);
+      });
+    } catch {}
+  }
+  setTimeout(_cleanupStorage, 5000);  // 5초 후 백그라운드 정리
+
   // ─── v2.47.15: 월요일 첫 진입 시 위클리 요약 토스트 ───
   function _weeklySummary() {
     try {
@@ -3833,6 +3854,11 @@ if ('serviceWorker' in navigator) {
     chip.style.background = bg;
     dot.style.background = color;
     txt.textContent = label;
+    // v2.47.36: 60분 이상 안 갱신되면 자동 알림 (1회만)
+    if (min >= 60 && !sessionStorage.getItem('staleDataAlert')) {
+      sessionStorage.setItem('staleDataAlert', '1');
+      if (typeof notifPush === 'function') notifPush('info', '⚠️ 데이터 지연', `${Math.floor(min/60)}시간 갱신 안 됨 — PC 앱 실행 확인 필요`);
+    }
   }
   setInterval(_updateFreshness, 30 * 1000);
   </script>
