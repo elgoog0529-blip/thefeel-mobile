@@ -906,6 +906,26 @@ if ('serviceWorker' in navigator) {
 
   // ─── 데이터 로드 ───
   let D = null, INV = null, MD = null, TXN = null, DAILY = null, NAVER_RT = null;
+  // v2.47.6: 큰 주문 (50만원+) 알림 — 새 주문 들어올 때마다 토스트 1회
+  const _BIG_ORDER_THRESHOLD = 500000;
+  function _alertBigOrders(items) {
+    if (!Array.isArray(items)) return;
+    let alerted = {};
+    try { alerted = JSON.parse(sessionStorage.getItem('bigOrderAlerted') || '{}'); } catch {}
+    const newBigs = items.filter(it => (it.totalPaymentAmount || 0) >= _BIG_ORDER_THRESHOLD && !alerted[it.productOrderId]);
+    if (newBigs.length === 0) return;
+    newBigs.forEach(it => { alerted[it.productOrderId] = 1; });
+    sessionStorage.setItem('bigOrderAlerted', JSON.stringify(alerted));
+    // 최대 3개까지만 토스트 (스팸 방지)
+    newBigs.slice(0, 3).forEach((it, idx) => {
+      setTimeout(() => {
+        const amt = fmtK(it.totalPaymentAmount);
+        const name = (it.productName || '').slice(0, 30);
+        toast(`💰 큰 주문 ${amt}: ${name}`, 'success', 5500);
+        if (typeof haptic === 'function') haptic();
+      }, idx * 1500);
+    });
+  }
   // v2.46.17: 실시간 카드 — 이익률은 원가 대비 (사용자 룰)
   const _NAVER_SETTLE_RATE = 0.8824;            // 정산 / 매출
   const _NAVER_PROFIT_AMT_RATE = 0.1722;        // 이익금액 / 매출 (금액 계산용)
@@ -950,6 +970,9 @@ if ('serviceWorker' in navigator) {
         setT('naverGap', gapMin < 60 ? gapMin+'분' : Math.floor(gapMin/60)+'시간 '+(gapMin%60)+'분');
       } else { setT('naverGap','—'); }
     } else { setT('naverLast','—'); setT('naverGap','—'); }
+
+    // v2.47.6: 큰 주문 알림 체크
+    _alertBigOrders(items);
 
     // v2.47.5: 24시간 결제 분포 미니 차트
     const hourEl = document.getElementById('naverHourly');
