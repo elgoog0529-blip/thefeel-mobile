@@ -590,6 +590,30 @@ if ('serviceWorker' in navigator) {
         <div class="hero-delta" id="dsHeroDelta2">매일 PC에서 import한 데이터 기반</div>
         <div class="hero-mini" id="dsHeroMini2"></div>
       </div>
+      <!-- v2.47.14: 이번 달 진행률 게이지 (시간 vs 매출) -->
+      <div id="monthProgressCard" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:12px 14px;margin-bottom:14px;display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="font-size:11px;color:var(--soft);font-weight:600;">⏱ 이번 달 진행률</div>
+          <span id="monthProgressLabel" style="font-size:11px;color:var(--text);font-family:'MonoLocal',monospace;font-weight:700;">—</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <div style="font-size:9.5px;color:var(--soft);margin-bottom:3px;">📅 시간</div>
+            <div style="position:relative;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;">
+              <div id="monthProgressTime" style="position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg,#6a5ae0,#1a73e8);border-radius:4px;width:0%;transition:width .6s ease;"></div>
+            </div>
+            <div id="monthProgressTimeLbl" style="font-size:10px;color:var(--soft);margin-top:3px;font-family:'MonoLocal',monospace;">—</div>
+          </div>
+          <div>
+            <div style="font-size:9.5px;color:var(--soft);margin-bottom:3px;">💰 매출 (예상)</div>
+            <div style="position:relative;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;">
+              <div id="monthProgressSales" style="position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg,#f59e0b,#02a647);border-radius:4px;width:0%;transition:width .6s ease;"></div>
+            </div>
+            <div id="monthProgressSalesLbl" style="font-size:10px;color:var(--soft);margin-top:3px;font-family:'MonoLocal',monospace;">—</div>
+          </div>
+        </div>
+        <div id="monthProgressForecast" style="font-size:10.5px;color:var(--soft);margin-top:8px;text-align:center;font-style:italic;">—</div>
+      </div>
 
       <!-- v2.46.21: 네이버 실시간 — 매출명세서 화면 (오늘 결제 + 예상 정산/이익) -->
       <div id="dsNaverCard" style="background:linear-gradient(135deg,rgba(3,199,90,0.14),rgba(26,115,232,0.06));border:1px solid rgba(3,199,90,0.30);border-radius:14px;padding:14px;margin-bottom:14px;display:none;">
@@ -1949,6 +1973,40 @@ if ('serviceWorker' in navigator) {
     // 새 화면 element 있으면 매출명세 렌더, 없으면 (옛 캐시) skip
     const amt = document.getElementById('dsHeroAmount2');
     if (!amt) return;
+
+    // v2.47.14: 이번 달 진행률 게이지 (시간 vs 매출 외삽)
+    try {
+      const card = document.getElementById('monthProgressCard');
+      if (card && D.months26 && D.months26.length > 0) {
+        const now = new Date();
+        const y = now.getFullYear(), mo = now.getMonth();
+        const daysInMonth = new Date(y, mo+1, 0).getDate();
+        const today = now.getDate();
+        const timePct = (today / daysInMonth) * 100;
+        // 이번 달 매출 (D.months26에서 현재 ym)
+        const ym = String(y) + String(mo+1).padStart(2,'0');
+        const thisMonth = D.months26.find(m => m.ym === ym);
+        // 지난 5달 평균 (외삽 기준)
+        const prevMonths = D.months26.filter(m => m.ym < ym).slice(-5);
+        const avgMonthlySales = prevMonths.length > 0 ? prevMonths.reduce((s,m) => s + (m.sales||0), 0) / prevMonths.length : 0;
+        const currentSales = thisMonth?.sales || 0;
+        // 외삽 예상 — 일평균 × 30
+        const dailyAvg = today > 0 ? currentSales / today : 0;
+        const forecastSales = Math.round(dailyAvg * daysInMonth);
+        const salesPct = avgMonthlySales > 0 ? (currentSales / avgMonthlySales) * 100 : 0;
+        const forecastPct = avgMonthlySales > 0 ? (forecastSales / avgMonthlySales) * 100 : 0;
+        card.style.display = 'block';
+        document.getElementById('monthProgressLabel').textContent = `${mo+1}월 ${today}/${daysInMonth}일`;
+        const setW = (id, pct) => { const el=document.getElementById(id); if (el) el.style.width = Math.min(100, Math.max(0,pct)) + '%'; };
+        setW('monthProgressTime', timePct);
+        setW('monthProgressSales', forecastPct);
+        document.getElementById('monthProgressTimeLbl').textContent = `${timePct.toFixed(0)}% 경과`;
+        document.getElementById('monthProgressSalesLbl').textContent = `${fmtK(currentSales)} (예상 ${forecastPct.toFixed(0)}%)`;
+        const aheadOrBehind = forecastPct >= 100 ? `📈 평균보다 ${(forecastPct-100).toFixed(0)}% 빠름` : `📉 평균보다 ${(100-forecastPct).toFixed(0)}% 느림`;
+        document.getElementById('monthProgressForecast').textContent = `월말 예상: ${fmtK(forecastSales)} · ${prevMonths.length > 0 ? aheadOrBehind : ''}`;
+      }
+    } catch (e) { console.warn('month progress fail:', e.message); }
+
     // v2.46.32: 매출명세 hero — 2026 우선 + 오늘/어제/이번주 비교
     const r = D.recent2026 || D.total || {};
     const profit = (r.profit != null) ? r.profit : ((r.settle||0) - (r.cost||0));
