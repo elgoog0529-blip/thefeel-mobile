@@ -3897,6 +3897,30 @@ if ('serviceWorker' in navigator) {
   }
   setTimeout(_weeklySummary, 3000);  // 데이터 로드 후 실행
 
+  // v2.47.53: 일요일 저녁 18시 이후 첫 진입 — 주간 마감 토스트
+  function _sundayClose() {
+    try {
+      const now = new Date();
+      if (now.getDay() !== 0 || now.getHours() < 18) return;
+      const yyyyww = now.getFullYear() + '-W' + Math.ceil((now.getDate() + new Date(now.getFullYear(),0,1).getDay()) / 7);
+      const key = 'sundayClose:' + yyyyww;
+      if (localStorage.getItem(key)) return;
+      if (!D) return;
+      const days = D.daily || [];
+      const cutoff7 = new Date(now.getTime() - 7*24*60*60*1000);
+      const thisWeek = days.filter(d => new Date(d.date) >= cutoff7);
+      const sum = thisWeek.reduce((s,d) => s + (d.sales||0), 0);
+      if (sum === 0) return;
+      const avg = sum / thisWeek.length;
+      const best = thisWeek.reduce((mx, d) => d.sales > mx.sales ? d : mx, thisWeek[0] || {sales:0,date:''});
+      const msg = `🏁 이번 주 마감 (${thisWeek.length}일)\n💰 합계 ${fmtK(sum)} · 일평균 ${fmtK(avg)}\n🏆 최고일 ${best.date?.slice(5)||'—'} ${fmtK(best.sales)}`;
+      setTimeout(() => toast(msg, 'success', 8000), 2500);
+      if (typeof notifPush === 'function') notifPush('info', '🏁 이번 주 마감', `합계 ${fmtK(sum)} · 일평균 ${fmtK(avg)}`);
+      localStorage.setItem(key, '1');
+    } catch {}
+  }
+  setTimeout(_sundayClose, 3500);
+
   // ─── v2.47.10: 검색 자동완성 (최근 5개) ───
   function _searchRemember(key, q) {
     if (!q || q.length < 2) return;
