@@ -743,6 +743,7 @@ if ('serviceWorker' in navigator) {
         <div class="srow"><span class="sic">👤</span><span class="stx">로그인 사용자</span><span class="sval" id="authUserLbl">—</span></div>
         <div class="srow" id="rowLogout" style="color:#ff6b6b;"><span class="sic">🔓</span><span class="stx">로그아웃</span><span class="chev">›</span></div>
         <div class="srow" id="rowChangePass"><span class="sic">🔑</span><span class="stx">비밀번호 변경</span><span class="sval">PC앱에서</span><span class="chev">›</span></div>
+        <div class="srow" id="rowWhatsNew"><span class="sic">🆕</span><span class="stx">v2.47 신기능 보기</span><span class="sval">49개 업데이트</span><span class="chev">›</span></div>
       </div>
 
       <div class="sec-head"><span class="sec-title">정보</span></div>
@@ -3668,6 +3669,33 @@ if ('serviceWorker' in navigator) {
   document.getElementById('rowLogout')?.addEventListener('click', () => {
     haptic(); if (confirm('로그아웃하시겠습니까? 다음 진입 시 다시 로그인 필요')) _logout();
   });
+  // v2.47.50: v2.47.x 시리즈 통합 changelog
+  document.getElementById('rowWhatsNew')?.addEventListener('click', () => {
+    haptic();
+    const changes = [
+      {cat:'🎨 브랜드', items:['블루 로고 통일 (모바일+PC+Windows)', '로고 흰 배경 (헤더/로그인/설정)', '시각 기반 다크모드 (18시 자동)']},
+      {cat:'⚡ 인프라', items:['PC 자동 시작 + App Nap 방지', 'Windows 원클릭 설치 (NSIS)', '증권앱 스타일 자동 업데이트', '30분 자동 로그아웃']},
+      {cat:'💰 매출 분석', items:['AOV / 마지막 결제 / 결제 간격', '정산 D-Day (다음 입금일)', '24시간 결제 분포 차트', '오늘 큰 주문 (50만원+) 카드', '오늘 vs 일평균 비교']},
+      {cat:'🚨 알림', items:['🔔 알림 센터 + 카테고리 + X 삭제', 'PWA 아이콘 빨간 배지', 'macOS 네이티브 푸시', 'Web Push 권한 + 폰 잠금화면 알림', '환율 1%+ / 매출 50%+ 자동 알림', '재발주 위험 / 떠오르는 모델']},
+      {cat:'📦 재고', items:['🔥 베스트 / 💤 데드 / 🚨 발주위험 chip', '단가 직접 입력 이익률 계산기', '글로벌 검색 (브랜드/모델/SKU)', '검색 자동완성 (최근 5개)']},
+      {cat:'📈 차트', items:['🌡 월별 마진율 추이 라인', '⏱ 이번 달 진행률 게이지', '📅 월간 정산 캘린더 (히트맵)', '📊 30일 sparkline + 평균선']},
+      {cat:'🇬🇧 환율', items:['GBP 추가 (영국 명품)', '7일 추세 차트 (모바일+PC)', '환율 7일 변동률 자동']},
+      {cat:'💾 데이터', items:['전체 데이터 백업 (JSON)', '백업 복구 (즐겨찾기 / 알림)', '자동 무결성 체크', '60분+ 데이터 지연 알림']},
+      {cat:'🛒 마켓 API', items:['7개 마켓 API framework 준비', '네이버·쿠팡·11번가·ESM·라쿠텐·BUYMA', '.env에 API key만 추가하면 작동']},
+    ];
+    const html = changes.map(s => `
+      <div style="margin-bottom:14px;">
+        <div style="font-weight:700;font-size:13px;color:var(--text);margin-bottom:6px;">${s.cat}</div>
+        ${s.items.map(it => `<div style="font-size:12px;color:var(--soft);margin-left:6px;padding:3px 0;line-height:1.4;">• ${it}</div>`).join('')}
+      </div>
+    `).join('');
+    openModal('🆕 v2.47 신기능 (49개 업데이트)', `
+      <div style="font-size:11px;color:var(--soft);margin-bottom:14px;line-height:1.45;">차장님 명령에 따라 자율 모드로 49번 연속 업데이트. 다음 큰 작업은 마켓 API 활성화 (.env에 키만 추가).</div>
+      ${html}
+      <div style="margin-top:14px;padding:12px;background:rgba(27,100,218,0.06);border-radius:9px;font-size:11px;color:var(--text);text-align:center;">💎 v2.47.50 — 50번째 자율 마일스톤</div>
+    `);
+  });
+
   document.getElementById('rowChangePass')?.addEventListener('click', () => {
     haptic();
     alert('비밀번호 변경:\n\n1. PC 앱(통합운영시스템) 실행\n2. 설정 → 모바일 비밀번호 변경\n3. 변경 후 재배포 자동 실행\n4. 모바일 새로고침 (재로그인)\n\n현재 임시 비번은 즉시 변경 권장.');
