@@ -416,6 +416,20 @@ if ('serviceWorker' in navigator) {
           </div>
         </div>
       </div>
+      <!-- v2.47.12: 떠오르는 베스트셀러 (sellPct 60~85 AND 재고 충분) -->
+      <div id="trendingCard" style="background:linear-gradient(135deg,rgba(3,199,90,0.10),rgba(27,100,218,0.05));border:1px solid rgba(3,199,90,0.25);border-radius:14px;padding:12px 14px;margin-bottom:12px;display:none;cursor:pointer;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:10px;color:#02a647;font-weight:700;letter-spacing:0.5px;">🔥 떠오르는 베스트셀러</div>
+            <div id="trendingCount" style="font-size:14px;font-weight:700;color:#02a647;margin-top:3px;">—</div>
+          </div>
+          <div style="text-align:right;">
+            <div id="trendingValue" style="font-size:13px;font-weight:700;color:#1b64da;font-family:'MonoLocal',monospace;">—</div>
+            <div style="font-size:10px;color:var(--soft);margin-top:2px;">재고 가치</div>
+          </div>
+        </div>
+        <div id="trendingTop3" style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;"></div>
+      </div>
       <!-- v2.47.8: 재발주 위험 카드 (sellPct >= 70 AND stock <= 5) -->
       <div id="reorderCard" style="background:linear-gradient(135deg,rgba(239,68,68,0.10),rgba(245,158,11,0.05));border:1px solid rgba(239,68,68,0.25);border-radius:14px;padding:12px 14px;margin-bottom:12px;display:none;cursor:pointer;">
         <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -1271,6 +1285,33 @@ if ('serviceWorker' in navigator) {
 
   function renderDashboard() {
     if (!D) return;
+    // v2.47.12: 떠오르는 베스트셀러 카드 — 잘 팔리는데 재고 충분 (재발주 후보 X, 매출 동력 O)
+    try {
+      const trendingCard = document.getElementById('trendingCard');
+      if (trendingCard && INV && Array.isArray(INV.models)) {
+        const trending = INV.models
+          .filter(m => m.sellPct >= 60 && m.sellPct < 85 && m.stockTotal >= 10)
+          .sort((a,b) => b.stockValue - a.stockValue);
+        if (trending.length > 0) {
+          trendingCard.style.display = 'block';
+          const totalValue = trending.reduce((s,m) => s + (m.stockValue||0), 0);
+          document.getElementById('trendingCount').textContent = `${trending.length}개 모델 · 합계 재고 ${trending.reduce((s,m)=>s+m.stockTotal,0)}개`;
+          document.getElementById('trendingValue').textContent = fmtK(totalValue);
+          const top3 = trending.slice(0, 3).map(m =>
+            `<span style="padding:3px 8px;background:rgba(3,199,90,0.10);border:1px solid rgba(3,199,90,0.18);border-radius:8px;font-size:10px;color:#02a647;font-weight:600;">${(m.brand||'').slice(0,4)} ${(m.model||'').slice(0,15)} · ${m.sellPct.toFixed(0)}%</span>`
+          ).join('');
+          document.getElementById('trendingTop3').innerHTML = top3 + (trending.length > 3 ? `<span style="padding:3px 8px;font-size:10px;color:var(--soft);">+${trending.length-3}</span>` : '');
+          trendingCard.onclick = () => {
+            haptic();
+            document.querySelector('.tab-item[data-screen="inventory"]')?.click();
+            setTimeout(() => document.querySelector('.pill[data-imode="model"]')?.click(), 100);
+          };
+        } else {
+          trendingCard.style.display = 'none';
+        }
+      }
+    } catch (e) { console.warn('trendingCard fail:', e.message); }
+
     // v2.47.8: 재발주 위험 카드 — 잘 팔리는데 재고 임박
     try {
       const reorderCard = document.getElementById('reorderCard');
