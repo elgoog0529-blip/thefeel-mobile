@@ -2999,19 +2999,32 @@ if ('serviceWorker' in navigator) {
   document.getElementById('freshChip').style.cursor = 'pointer';
   document.getElementById('freshChip').title = '클릭하여 즉시 새로고침';
 
-  // v2.47.25: 매출명세서 hero 클릭 → 이번 달 요약 토스트
-  document.getElementById('dsHeroCard')?.addEventListener('click', () => {
+  // v2.47.25/37: 매출명세서 hero 클릭 → 토스트 + share (긴 탭)
+  let _heroPressTimer = null;
+  function _heroShowSummary(share = false) {
     if (!D) return;
-    haptic();
     const r = D.recent2026 || D.total || {};
     const profit = r.profit != null ? r.profit : ((r.settle||0) - (r.cost||0));
     const marginRate = (r.cost||0) > 0 ? profit/r.cost*100 : 0;
     const aov = r.rows > 0 ? r.sales / r.rows : 0;
     const topBrand = (D.brands26 || D.brands || [])[0];
     const topChan = (D.channels26 || D.channels || [])[0];
-    const msg = `💎 2026 YTD\n매출 ${fmtK(r.sales||0)} · 이익 ${fmtK(profit)} (${marginRate.toFixed(1)}%)\n${fmtN(r.rows||0)}건 · AOV ${fmtK(aov)}\n🏆 ${topBrand?.name||'—'} · ${topChan?.name||'—'}`;
-    toast(msg, 'success', 8000);
-  });
+    const shareText = `💎 더필코리아 2026 YTD\n매출 ${fmtK(r.sales||0)} · 이익 ${fmtK(profit)} (${marginRate.toFixed(1)}%)\n${fmtN(r.rows||0)}건 · AOV ${fmtK(aov)}\n🏆 ${topBrand?.name||'—'} · ${topChan?.name||'—'}`;
+    if (share && navigator.share) {
+      try { navigator.share({title:'더필코리아 매출 요약', text: shareText}); haptic(); return; } catch {}
+    }
+    if (share && navigator.clipboard) {
+      try { navigator.clipboard.writeText(shareText); toast('📋 클립보드 복사됨', 'success', 2500); return; } catch {}
+    }
+    toast(shareText, 'success', 8000);
+  }
+  document.getElementById('dsHeroCard')?.addEventListener('click', () => { haptic(); _heroShowSummary(false); });
+  // 길게 누르기 (500ms) → share API
+  document.getElementById('dsHeroCard')?.addEventListener('touchstart', () => {
+    _heroPressTimer = setTimeout(() => { hapticPattern && hapticPattern(HAPTIC_SUCCESS); _heroShowSummary(true); }, 550);
+  }, {passive: true});
+  document.getElementById('dsHeroCard')?.addEventListener('touchend', () => { clearTimeout(_heroPressTimer); });
+  document.getElementById('dsHeroCard')?.addEventListener('touchmove', () => { clearTimeout(_heroPressTimer); });
 
   // v2.47.22: 전체 데이터 백업 다운로드 (JSON)
   document.getElementById('rowBackup')?.addEventListener('click', () => {
