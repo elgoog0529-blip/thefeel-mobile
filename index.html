@@ -2029,15 +2029,22 @@ if ('serviceWorker' in navigator) {
           const codesList = [...codeSet].join(', ');
           // v2.46.25: 단일 판매 이익률 계산기
           const avgCost = model.unitPriceMin || 0;
+          // v2.47.41: 원가 직접 입력 필드 추가 (위탁/특별 거래 cost 다른 경우)
           const profitCalcHtml = `
             <div class="be-card" style="background:linear-gradient(135deg,rgba(245,158,11,0.10),rgba(245,158,11,0.02));border:1px solid rgba(245,158,11,0.3);">
               <div class="be-top"><div class="be-name">💰 단일 판매 이익률 계산기</div></div>
-              <div style="margin-top:10px;">
-                <label style="font-size:11px;color:var(--soft);display:block;margin-bottom:6px;">판매가 입력 (네이버 채널 기준)</label>
-                <input id="calcSellPrice" type="number" inputmode="numeric" placeholder="예: 1000000" value="${avgCost ? Math.round(avgCost * 1.45) : ''}" style="width:100%;padding:10px 12px;border:1px solid rgba(245,158,11,0.4);border-radius:9px;background:var(--bg);color:var(--ink);font-family:'MonoLocal',monospace;font-size:15px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+                <div>
+                  <label style="font-size:11px;color:var(--soft);display:block;margin-bottom:6px;">판매가</label>
+                  <input id="calcSellPrice" type="number" inputmode="numeric" placeholder="예: 1000000" value="${avgCost ? Math.round(avgCost * 1.45) : ''}" style="width:100%;padding:10px 12px;border:1px solid rgba(245,158,11,0.4);border-radius:9px;background:var(--bg);color:var(--ink);font-family:'MonoLocal',monospace;font-size:14px;">
+                </div>
+                <div>
+                  <label style="font-size:11px;color:var(--soft);display:block;margin-bottom:6px;">원가 (수정 가능)</label>
+                  <input id="calcCost" type="number" inputmode="numeric" placeholder="원가" value="${avgCost || ''}" style="width:100%;padding:10px 12px;border:1px solid rgba(245,158,11,0.4);border-radius:9px;background:var(--bg);color:var(--ink);font-family:'MonoLocal',monospace;font-size:14px;">
+                </div>
               </div>
               <div id="calcResult" style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;font-family:'MonoLocal',monospace;font-size:12px;">
-                원가 입력 또는 판매가 입력 시 자동 계산
+                판매가/원가 입력 시 자동 계산
               </div>
             </div>`;
           openModal(`${model.brand} ${model.model}`, `
@@ -2068,15 +2075,19 @@ if ('serviceWorker' in navigator) {
           // 판매가 입력 이벤트
           setTimeout(() => {
             const inp = document.getElementById('calcSellPrice');
+            const inpCost = document.getElementById('calcCost');
             const out = document.getElementById('calcResult');
             if (!inp || !out) return;
             function compute() {
               const sale = parseFloat(inp.value) || 0;
-              if (sale <= 0 || avgCost <= 0) { out.textContent = '판매가/원가 둘 다 필요'; return; }
+              // v2.47.41: 원가 사용자 입력 우선, 없으면 avgCost
+              const userCost = inpCost ? parseFloat(inpCost.value) || 0 : 0;
+              const cost = userCost > 0 ? userCost : avgCost;
+              if (sale <= 0 || cost <= 0) { out.textContent = '판매가/원가 둘 다 필요'; return; }
               // 일반 EC: 정산 = sales × 0.8824 (네이버), 이익 = settle - sales/1.1*0.1 - cost
               const settle = sale * 0.8824;
-              const profit = settle - (sale/1.1*0.1) - avgCost;  // 일반 EC 공식
-              const profitRate = (profit / avgCost) * 100;
+              const profit = settle - (sale/1.1*0.1) - cost;  // 일반 EC 공식
+              const profitRate = (profit / cost) * 100;
               const marginRate = (profit / sale) * 100;
               out.innerHTML = `
                 <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
@@ -2087,6 +2098,7 @@ if ('serviceWorker' in navigator) {
                 </div>`;
             }
             inp.addEventListener('input', compute);
+            if (inpCost) inpCost.addEventListener('input', compute);  // v2.47.41: 원가 변경도 재계산
             compute();
           }, 100);
           return;
