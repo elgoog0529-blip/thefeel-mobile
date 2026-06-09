@@ -1028,10 +1028,11 @@ if ('serviceWorker' in navigator) {
     localStorage.setItem(NOTIF_READ_KEY, String(Date.now()));
     _notifUpdateDot();
     const arr = _notifLoad();
+    const _notifTarget = {'order':'breakeven','reorder':'inventory','fx':'dashboard','info':'breakeven','update':'settings','ip':'settings'};
     const html = arr.length === 0 ?
       '<div style="text-align:center;color:var(--soft);padding:32px 16px;">아직 알림이 없습니다</div>' :
-      arr.map(n => `
-        <div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+      arr.map((n, idx) => `
+        <div class="notif-row" data-tgt="${_notifTarget[n.type]||''}" style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;">
           <div style="font-size:20px;flex-shrink:0;">${_notifTypeIcon(n.type)}</div>
           <div style="flex:1;min-width:0;">
             <div style="font-weight:700;font-size:13.5px;color:var(--text);">${n.title}</div>
@@ -1052,6 +1053,16 @@ if ('serviceWorker' in navigator) {
           closeModal?.();
         }
       });
+      // 알림 클릭 → 해당 페이지 이동
+      document.querySelectorAll('.notif-row').forEach(row => row.addEventListener('click', () => {
+        const tgt = row.dataset.tgt;
+        if (!tgt) return;
+        haptic();
+        closeModal?.();
+        setTimeout(() => {
+          document.querySelector(`.tab-item[data-screen="${tgt}"]`)?.click();
+        }, 200);
+      }));
     }, 50);
   }
 
@@ -3115,6 +3126,33 @@ if ('serviceWorker' in navigator) {
   // v2.47.10: 알림 센터 종 — 클릭 시 모달 + 초기 dot 갱신
   document.getElementById('notifBtn')?.addEventListener('click', () => notifOpenModal());
   setTimeout(() => _notifUpdateDot(), 200);
+
+  // ─── v2.47.15: 월요일 첫 진입 시 위클리 요약 토스트 ───
+  function _weeklySummary() {
+    try {
+      const now = new Date();
+      if (now.getDay() !== 1) return; // 월요일만
+      const yyyyww = now.getFullYear() + '-W' + Math.ceil((now.getDate() + new Date(now.getFullYear(),0,1).getDay()) / 7);
+      const shownKey = 'weeklyShown:' + yyyyww;
+      if (localStorage.getItem(shownKey)) return;
+      if (!D || !D.recent2026) return;
+      // 지난 7일 매출 (D.daily 또는 fallback)
+      const days = D.daily || [];
+      const cutoff7 = new Date(now.getTime() - 7*24*60*60*1000);
+      const cutoff14 = new Date(now.getTime() - 14*24*60*60*1000);
+      const last7Sales = days.filter(d => new Date(d.date) >= cutoff7).reduce((s,d) => s + (d.sales||0), 0);
+      const prev7Sales = days.filter(d => { const dt = new Date(d.date); return dt >= cutoff14 && dt < cutoff7; }).reduce((s,d) => s + (d.sales||0), 0);
+      if (last7Sales === 0) return;
+      const wow = prev7Sales > 0 ? ((last7Sales - prev7Sales) / prev7Sales * 100) : null;
+      const trend = wow != null ? (wow >= 0 ? `▲ ${wow.toFixed(1)}%` : `▼ ${Math.abs(wow).toFixed(1)}%`) : '';
+      const emoji = wow != null && wow >= 0 ? '📈' : '📊';
+      const msg = `${emoji} 지난 주 매출 ${fmtK(last7Sales)} ${trend} (전주 대비)`;
+      setTimeout(() => toast(msg, 'success', 7000), 2500);
+      if (typeof notifPush === 'function') notifPush('info', `📊 주간 요약`, `지난 주 ${fmtK(last7Sales)} · 전주 대비 ${trend || '—'}`);
+      localStorage.setItem(shownKey, '1');
+    } catch (e) { console.warn('weekly summary fail:', e.message); }
+  }
+  setTimeout(_weeklySummary, 3000);  // 데이터 로드 후 실행
 
   // ─── v2.47.10: 검색 자동완성 (최근 5개) ───
   function _searchRemember(key, q) {
