@@ -485,8 +485,8 @@ if ('serviceWorker' in navigator) {
       <div id="recentChips" class="insight-row" style="margin-bottom:12px;"></div>
       <!-- 환율 위젯 -->
       <div class="fx-row" id="fxRow"></div>
-      <!-- 최근 30일 sparkline -->
-      <div class="chart-card" id="sparkCard" hidden style="padding:14px;margin-bottom:14px;">
+      <!-- 최근 30일 sparkline (v2.47.29: 탭하여 상세 요약) -->
+      <div class="chart-card" id="sparkCard" hidden style="padding:14px;margin-bottom:14px;cursor:pointer;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <div style="font-size:11px;color:var(--soft);font-weight:600;">최근 30일 매출 흐름</div>
           <div id="sparkPeak" style="font-size:11px;color:var(--gold-deep);font-family:'MonoLocal',monospace;font-weight:600;">—</div>
@@ -1571,6 +1571,16 @@ if ('serviceWorker' in navigator) {
     const sparkCard = document.getElementById('sparkCard');
     if (sparkCard && DAILY && DAILY.days && DAILY.days.length > 1) {
       sparkCard.hidden = false;
+      // v2.47.29: sparkCard 탭 → 상세 요약
+      sparkCard.onclick = () => {
+        haptic();
+        const sum = DAILY.days.reduce((s,d) => s + (d.sales||0), 0);
+        const cnt = DAILY.days.reduce((s,d) => s + (d.qty||0), 0);
+        const avg = sum / DAILY.days.length;
+        const peak = DAILY.days.reduce((mx, d) => d.sales > mx.sales ? d : mx, DAILY.days[0]);
+        const low = DAILY.days.reduce((mn, d) => d.sales < mn.sales ? d : mn, DAILY.days[0]);
+        toast(`📈 최근 ${DAILY.days.length}일\n합계 ${fmtK(sum)} · 일평균 ${fmtK(avg)}\n최고 ${peak.date.slice(5)}: ${fmtK(peak.sales)}\n최저 ${low.date.slice(5)}: ${fmtK(low.sales)}\n${cnt}건`, 'info', 7000);
+      };
       const days = DAILY.days;
       const max = Math.max(1, ...days.map(d => d.sales));
       const min = Math.min(0, ...days.map(d => d.sales));
