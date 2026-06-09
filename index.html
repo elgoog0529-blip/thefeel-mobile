@@ -447,7 +447,7 @@ if ('serviceWorker' in navigator) {
         <div id="reorderTop3" style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;"></div>
       </div>
       <!-- v2.47.3/55: 다음 정산 D-Day 카드 (네이버 매일 정산 · D+1 영업일) -->
-      <div id="settleEtaCard" style="background:linear-gradient(135deg,rgba(245,158,11,0.10),rgba(27,100,218,0.05));border:1px solid rgba(245,158,11,0.25);border-radius:14px;padding:12px 14px;margin-bottom:12px;display:none;">
+      <div id="settleEtaCard" style="background:linear-gradient(135deg,rgba(245,158,11,0.10),rgba(27,100,218,0.05));border:1px solid rgba(245,158,11,0.25);border-radius:14px;padding:12px 14px;margin-bottom:12px;display:none;cursor:pointer;">
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div>
             <div style="font-size:10px;color:var(--soft);font-weight:600;letter-spacing:0.5px;">💰 다음 정산 입금 예정</div>
@@ -1339,6 +1339,15 @@ if ('serviceWorker' in navigator) {
       setT('settleEtaDate', eta.getMonth()+1 + '월 ' + eta.getDate() + '일 (' + ['일','월','화','수','목','금','토'][eta.getDay()] + ')');
       setT('settleEtaAmt', fmtK(Math.round(amt * _NAVER_SETTLE_RATE)));
       setT('settleEtaDday', dday <= 0 ? '오늘 입금 예정' : 'D-' + dday + ' · 매일 정산 88.24%');
+      // v2.47.62: 클릭 시 매출명세서 화면 + 채널 탭 자동 이동
+      settleCard.onclick = () => {
+        haptic();
+        document.querySelector('.tab-item[data-screen="breakeven"]')?.click();
+        setTimeout(() => {
+          // 채널 탭 활성화 시도
+          document.querySelector('.pill[data-tab="channel"]')?.click();
+        }, 200);
+      };
     }
     const wrap = document.getElementById('naverBreakdown');
     const byStatus = NAVER_RT.last24h?.byStatus || {};
