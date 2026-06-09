@@ -351,8 +351,8 @@ if ('serviceWorker' in navigator) {
         </div>
         <!-- v2.47.16: 글로벌 빠른 검색 -->
         <button class="theme-btn" id="globalSearchBtn" aria-label="빠른 검색">🔍</button>
-        <!-- v2.47.10: 알림 센터 종 -->
-        <button class="theme-btn" id="notifBtn" aria-label="알림" style="position:relative;">🔔<span id="notifDot" hidden style="position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:#dc2626;border:1.5px solid #fff;"></span></button>
+        <!-- v2.47.10: 알림 센터 종 + v2.47.32: 카운트 -->
+        <button class="theme-btn" id="notifBtn" aria-label="알림" style="position:relative;">🔔<span id="notifDot" hidden style="position:absolute;top:1px;right:1px;min-width:14px;height:14px;padding:0 3px;border-radius:8px;background:#dc2626;border:1.5px solid #fff;color:#fff;font-size:9px;font-weight:700;line-height:11px;text-align:center;display:flex;align-items:center;justify-content:center;"></span></button>
         <button class="theme-btn" id="themeBtn" aria-label="테마 전환">🌓</button>
       </div>
     </div>
@@ -1010,6 +1010,7 @@ if ('serviceWorker' in navigator) {
     if (!dot) return;
     const unread = _notifUnread();
     dot.hidden = unread === 0;
+    if (unread > 0) dot.textContent = unread > 9 ? '9+' : String(unread);
     // v2.47.11: PWA 홈스크린 아이콘 badge (안 본 알림 수)
     try {
       if ('setAppBadge' in navigator) {
@@ -1295,9 +1296,22 @@ if ('serviceWorker' in navigator) {
       renderNaverCard();
       renderAll();
       if (refresh) toast('데이터 갱신됨');
+      // v2.47.32: 데이터 무결성 자동 체크 — 핵심 데이터 누락 시 경고
+      try {
+        const issues = [];
+        if (!D || !(D.recent2026?.sales > 0)) issues.push('2026 매출');
+        if (!INV || !(INV.models?.length > 0)) issues.push('재고 모델');
+        if (!NAVER_RT) issues.push('네이버 실시간');
+        if (issues.length > 0 && !sessionStorage.getItem('dataIssuesShown')) {
+          toast(`⚠️ 일부 데이터 로드 실패: ${issues.join(', ')}`, 'warning', 5000);
+          sessionStorage.setItem('dataIssuesShown', '1');
+          if (typeof notifPush === 'function') notifPush('info', '⚠️ 데이터 누락', issues.join(' / ') + ' — PC에서 갱신 필요');
+        }
+      } catch {}
     } catch (e) {
       console.warn('데이터 로드 실패:', e);
       document.getElementById('dashAmount').textContent = '데이터 로드 실패';
+      toast('❌ 데이터 로드 실패 — 네트워크 확인', 'error', 5000);
     }
   }
 
