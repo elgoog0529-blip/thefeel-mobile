@@ -3214,6 +3214,11 @@ if ('serviceWorker' in navigator) {
       if (lastSeen === j.version) return;
       // 새 버전 — 첫 진입은 silent (lastSeen 저장만), 이후 진입에서 알림
       if (!lastSeen) { localStorage.setItem('lastSeenPCVer', j.version); return; }
+      // v2.47.13: 알림 센터에도 누적
+      if (typeof notifPush === 'function') {
+        const buildLabel = j.builtAt ? new Date(j.builtAt).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+        notifPush('update', `🆕 PC 앱 v${j.version} 출시`, `${buildLabel} 빌드 · 켜면 자동 적용`);
+      }
       // 알림 banner
       setTimeout(() => {
         const banner = document.createElement('div');
