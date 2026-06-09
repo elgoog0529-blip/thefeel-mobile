@@ -1,5 +1,5 @@
-// v2.47.27 SW — .json/.enc/.html은 network-first, 자산은 cache-first
-const CACHE = 'thefeel-mobile-v2.47.27';
+// v2.47.28 SW — .json/.enc/.html은 network-first, 자산은 cache-first
+const CACHE = 'thefeel-mobile-v2.47.28';
 const ASSETS = [
   './',
   './index.html',
