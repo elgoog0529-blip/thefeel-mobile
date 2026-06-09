@@ -474,9 +474,9 @@ if ('serviceWorker' in navigator) {
         #freshChip.refresh-spin { animation: refreshSpin 0.8s ease-in-out; }
       </style>
 
-      <div class="hero-card">
+      <div class="hero-card" id="dashHeroCard" style="cursor:pointer;">
         <div class="hero-row">
-          <span class="hero-eyebrow">전체 누적 매출 (2023~2026)</span>
+          <span class="hero-eyebrow">전체 누적 매출 (2023~2026) · 탭하여 공유</span>
           <span class="hero-period" id="dashPeriod">ALL</span>
         </div>
         <div class="hero-amount" id="dashAmount">₩ —</div>
@@ -3111,6 +3111,14 @@ if ('serviceWorker' in navigator) {
   }, {passive: true});
   document.getElementById('dsHeroCard')?.addEventListener('touchend', () => { clearTimeout(_heroPressTimer); });
   document.getElementById('dsHeroCard')?.addEventListener('touchmove', () => { clearTimeout(_heroPressTimer); });
+  // v2.47.44: 대시보드 hero도 동일 share
+  document.getElementById('dashHeroCard')?.addEventListener('click', () => { haptic(); _heroShowSummary(false); });
+  let _dashPressTimer = null;
+  document.getElementById('dashHeroCard')?.addEventListener('touchstart', () => {
+    _dashPressTimer = setTimeout(() => { hapticPattern && hapticPattern(HAPTIC_SUCCESS); _heroShowSummary(true); }, 550);
+  }, {passive: true});
+  document.getElementById('dashHeroCard')?.addEventListener('touchend', () => { clearTimeout(_dashPressTimer); });
+  document.getElementById('dashHeroCard')?.addEventListener('touchmove', () => { clearTimeout(_dashPressTimer); });
 
   // v2.47.22: 전체 데이터 백업 다운로드 (JSON)
   document.getElementById('rowBackup')?.addEventListener('click', () => {
