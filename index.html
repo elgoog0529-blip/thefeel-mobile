@@ -3139,6 +3139,61 @@ if ('serviceWorker' in navigator) {
   document.getElementById('notifBtn')?.addEventListener('click', () => notifOpenModal());
   setTimeout(() => _notifUpdateDot(), 200);
 
+  // v2.47.16: 글로벌 빠른 검색 — 브랜드/모델/SKU/거래 통합
+  document.getElementById('globalSearchBtn')?.addEventListener('click', () => {
+    haptic();
+    openModal('🔍 빠른 검색', `
+      <input id="gsInput" type="text" placeholder="브랜드 / 모델 / 품목코드 / 주문번호" autofocus autocomplete="off" style="width:100%;padding:14px 16px;border:1px solid rgba(27,100,218,0.18);border-radius:12px;background:var(--card,#1a1f2e);color:var(--text);font-family:inherit;font-size:15px;outline:none;margin-bottom:12px;">
+      <div id="gsResults" style="max-height:50vh;overflow-y:auto;"></div>
+      <div id="gsEmpty" style="text-align:center;color:var(--soft);padding:24px;font-size:12px;">검색어를 입력하세요 (2글자 이상)</div>
+    `);
+    setTimeout(() => {
+      const inp = document.getElementById('gsInput');
+      if (!inp) return;
+      inp.focus();
+      let _gst = null;
+      inp.addEventListener('input', () => {
+        clearTimeout(_gst);
+        _gst = setTimeout(() => {
+          const q = inp.value.trim().toLowerCase();
+          const res = document.getElementById('gsResults');
+          const empty = document.getElementById('gsEmpty');
+          if (q.length < 2) { res.innerHTML = ''; empty.style.display = 'block'; return; }
+          empty.style.display = 'none';
+          const hits = [];
+          // 브랜드
+          (D?.brands26 || D?.brands || []).forEach(b => {
+            if (b.name?.toLowerCase().includes(q)) hits.push({type:'브랜드', name:b.name, sub:`매출 ${fmtK(b.sales||0)}`, tgt:'breakeven'});
+          });
+          // 모델
+          (INV?.models || []).slice(0,500).forEach(m => {
+            const txt = (m.brand+' '+m.model).toLowerCase();
+            if (txt.includes(q)) hits.push({type:'모델', name:`${m.brand} ${m.model}`, sub:`재고 ${m.stockTotal||0}개 · 소진 ${(m.sellPct||0).toFixed(0)}%`, tgt:'inventory'});
+          });
+          // SKU
+          (INV?.items || []).slice(0,500).forEach(it => {
+            const txt = (it.n||it.name||it.b+' '+it.m).toLowerCase();
+            if (txt.includes(q)) hits.push({type:'SKU', name:it.n||it.name||(it.b+' '+it.m), sub:`재고 ${it.s||0}개 · ${fmtK(it.stv||0)}`, tgt:'inventory'});
+          });
+          const top = hits.slice(0, 20);
+          res.innerHTML = top.length === 0 ? '<div style="text-align:center;color:var(--soft);padding:24px;font-size:12px;">검색 결과 없음</div>' :
+            top.map(h => `
+              <div class="gs-row" data-tgt="${h.tgt}" style="padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;">
+                <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;padding:1px 6px;background:rgba(27,100,218,0.12);color:#1b64da;border-radius:6px;font-weight:700;">${h.type}</span><span style="font-weight:600;font-size:13.5px;flex:1;color:var(--text);">${h.name}</span></div>
+                <div style="font-size:11px;color:var(--soft);margin-top:3px;margin-left:42px;">${h.sub}</div>
+              </div>
+            `).join('') + (hits.length > 20 ? `<div style="text-align:center;color:var(--soft);padding:12px;font-size:11px;">+${hits.length-20}개 더 (검색어 좁히세요)</div>` : '');
+          res.querySelectorAll('.gs-row').forEach(row => row.addEventListener('click', () => {
+            const tgt = row.dataset.tgt;
+            haptic();
+            closeModal?.();
+            setTimeout(() => document.querySelector(`.tab-item[data-screen="${tgt}"]`)?.click(), 200);
+          }));
+        }, 250);
+      });
+    }, 100);
+  });
+
   // ─── v2.47.15: 월요일 첫 진입 시 위클리 요약 토스트 ───
   function _weeklySummary() {
     try {
