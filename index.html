@@ -3880,6 +3880,19 @@ if ('serviceWorker' in navigator) {
   document.getElementById('notifBtn')?.addEventListener('click', () => notifOpenModal());
   setTimeout(() => _notifUpdateDot(), 200);
 
+  // v2.47.70: PWA shortcuts URL parameter 처리 (?screen=breakeven 등)
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const screen = params.get('screen');
+    if (screen && ['dashboard','breakeven','inventory','settings'].includes(screen)) {
+      setTimeout(() => {
+        document.querySelector(`.tab-item[data-screen="${screen}"]`)?.click();
+        // 클린 URL (parameter 제거)
+        if (history.replaceState) history.replaceState(null, '', window.location.pathname);
+      }, 800);
+    }
+  } catch {}
+
   // ─── v2.47.21: 푸시 알림 권한 + foreground native notification ───
   const PUSH_KEY = 'pushNotifEnabled';
   function _pushIsEnabled() {
