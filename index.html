@@ -2154,6 +2154,23 @@ if ('serviceWorker' in navigator) {
     const amt = document.getElementById('dsHeroAmount2');
     if (!amt) return;
 
+    // v2.47.40: hero delta에 오늘 vs 일평균 비교
+    try {
+      const today = NAVER_RT?.today?.totalAmount || 0;
+      const days = DAILY?.days || [];
+      const avgDaily = days.length > 0 ? days.reduce((s,d) => s + (d.sales||0), 0) / days.length : 0;
+      if (today > 0 && avgDaily > 0) {
+        const diffPct = (today - avgDaily) / avgDaily * 100;
+        const trend = diffPct >= 0 ? `▲ ${diffPct.toFixed(0)}%` : `▼ ${Math.abs(diffPct).toFixed(0)}%`;
+        const emoji = diffPct >= 0 ? '📈' : '📉';
+        const delta2 = document.getElementById('dsHeroDelta2');
+        if (delta2) {
+          const existing = delta2.textContent;
+          delta2.innerHTML = `${existing} <span style="color:${diffPct >= 0 ? '#02a647' : '#dc2626'};font-weight:700;margin-left:6px;">${emoji} 오늘 ${trend} vs 일평균</span>`;
+        }
+      }
+    } catch {}
+
     // v2.47.18: hero 마진율 색상 코딩 (그린=좋음/노랑=평균/오렌지=주의) + chip 표시
     try {
       const r2 = D.recent2026 || D.total || {};
