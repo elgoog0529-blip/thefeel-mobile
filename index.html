@@ -833,12 +833,22 @@ if ('serviceWorker' in navigator) {
   };
   const logoFor = name => BRAND_LOGOS[name] || (String(name||'?').slice(0, 2).toUpperCase());
 
-  // ─── 햅틱 (설정으로 토글) ───
+  // ─── 햅틱 (설정으로 토글) — v2.47.35: 패턴 지원 ───
   let HAPTIC = true;
   function haptic(ms = 8) {
     if (!HAPTIC) return;
     if (navigator.vibrate) { try { navigator.vibrate(ms); } catch {} }
   }
+  // 패턴 햅틱 — 큰 액션 / 알림용
+  function hapticPattern(pattern) {
+    if (!HAPTIC) return;
+    if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch {} }
+  }
+  // 사전 정의된 패턴
+  const HAPTIC_SUCCESS = [10, 50, 10];          // 작은 진동 2번 (성공)
+  const HAPTIC_BIG_ORDER = [30, 100, 30];       // 큰 진동 2번 (큰 주문)
+  const HAPTIC_WARN = [20, 50, 20, 50, 20];     // 경고 (3번)
+  const HAPTIC_ERROR = [50, 100, 50, 100, 50];  // 강한 패턴 (에러)
 
   // ─── 즐겨찾기 (브랜드/채널) ───
   function loadFavs() { try { return JSON.parse(localStorage.getItem('favs') || '[]'); } catch { return []; } }
@@ -1136,7 +1146,9 @@ if ('serviceWorker' in navigator) {
         const amt = fmtK(it.totalPaymentAmount);
         const name = (it.productName || '').slice(0, 30);
         toast(`💰 큰 주문 ${amt}: ${name}`, 'success', 5500);
-        if (typeof haptic === 'function') haptic();
+        // v2.47.35: 큰 주문은 강한 패턴 햅틱
+        if (typeof hapticPattern === 'function') hapticPattern(HAPTIC_BIG_ORDER);
+        else if (typeof haptic === 'function') haptic(20);
       }, idx * 1500);
     });
     // 누적된 모든 큰 주문 알림 센터에 (3개 초과도)
