@@ -1032,6 +1032,19 @@ if ('serviceWorker' in navigator) {
     };
     return `<img src="${urls[0]}" alt="${name}" style="width:100%;height:100%;object-fit:contain;padding:14%;" onerror="${buildOnError(0)}">`;
   }
+  // v2.47.78: 작은 행용 아이콘 — Clearbit/favicon fallback, 흰 배경 작은 사이즈
+  function logoSmallImg(name) {
+    const urls = logoUrlsFallback(name, 64);
+    if (urls.length === 0) return logoFor(name);
+    const buildOnError = (idx) => {
+      if (idx >= urls.length - 1) return `this.outerHTML='${logoFor(name).replace(/'/g,"\\'")}';`;
+      return `this.onerror=function(){${buildOnError(idx+1)}};this.src='${urls[idx+1].replace(/'/g,"\\'")}';`;
+    };
+    return `<img src="${urls[0]}" alt="${name}" style="width:100%;height:100%;object-fit:contain;padding:10%;background:#fff;border-radius:8px;" onerror="${buildOnError(0)}">`;
+  }
+  function hasOfficialLogo(name) {
+    return _userLogo(name) || BRAND_DOMAINS[name];
+  }
   // 사용자가 브랜드 로고 직접 업로드 (data URL 저장)
   async function userUploadBrandLogo(brandName) {
     return new Promise(resolve => {
@@ -2173,7 +2186,6 @@ if ('serviceWorker' in navigator) {
       const pct = max > 0 ? Math.round(it.amt/max*100) : 0;
       const marginTxt = it.margin != null ? `${it.margin.toFixed(1)}%` : '—';
       const marginCls = it.margin != null ? (it.margin >= 0 ? 'up' : 'down') : '';
-      // v2.47.19: 채널/브랜드 마진 색상 chip (그린/노랑/오렌지 신호등)
       let marginChip = '';
       if (it.margin != null && it.margin > 0) {
         let dot = '';
@@ -2182,9 +2194,12 @@ if ('serviceWorker' in navigator) {
         else dot = '🟠';
         marginChip = `<span style="font-size:8px;margin-right:2px;">${dot}</span>`;
       }
-      const icStyle = it.isBrand ? brandStyle(it.key) : '';
+      // v2.47.78: 공식 로고 있으면 실제 이미지, 없으면 약자
+      const hasLogo = (it.isBrand || SET_TAB==='channel') && hasOfficialLogo(it.key);
+      const icContent = hasLogo ? logoSmallImg(it.key) : ab;
+      const icStyle = hasLogo ? 'background:#fff;border:1px solid rgba(0,0,0,0.05);overflow:hidden;' : (it.isBrand ? brandStyle(it.key) : '');
       const star = (it.isBrand || SET_TAB==='channel') ? `<span class="star ${isFav(it.key)?'on':''}" data-fav="${it.key}">${isFav(it.key)?'★':'☆'}</span>` : '';
-      return `<div class="lrow" data-i="${i}"><div class="lic" style="${icStyle}">${ab}</div><div class="lmain"><div class="lnm">${highlight(it.key, q)}</div><div class="lsub">${it.sub}</div><div class="lbar"><i style="width:${pct}%"></i></div></div><div class="lval"><div class="lamt">${fmtK(it.amt)}</div><div class="lpct ${marginCls}">${marginChip}${marginTxt}</div></div>${star}</div>`;
+      return `<div class="lrow" data-i="${i}"><div class="lic" style="${icStyle}">${icContent}</div><div class="lmain"><div class="lnm">${highlight(it.key, q)}</div><div class="lsub">${it.sub}</div><div class="lbar"><i style="width:${pct}%"></i></div></div><div class="lval"><div class="lamt">${fmtK(it.amt)}</div><div class="lpct ${marginCls}">${marginChip}${marginTxt}</div></div>${star}</div>`;
     }).join('');
     list.querySelectorAll('.star').forEach(s => s.addEventListener('click', e => {
       e.stopPropagation();
