@@ -1689,9 +1689,18 @@ if ('serviceWorker' in navigator) {
       const pct = max > 0 ? Math.round(it.amt/max*100) : 0;
       const marginTxt = it.margin != null ? `${it.margin.toFixed(1)}%` : '—';
       const marginCls = it.margin != null ? (it.margin >= 0 ? 'up' : 'down') : '';
+      // v2.47.19: 채널/브랜드 마진 색상 chip (그린/노랑/오렌지 신호등)
+      let marginChip = '';
+      if (it.margin != null && it.margin > 0) {
+        let dot = '';
+        if (it.margin >= 27) dot = '🟢';
+        else if (it.margin >= 18) dot = '🟡';
+        else dot = '🟠';
+        marginChip = `<span style="font-size:8px;margin-right:2px;">${dot}</span>`;
+      }
       const icStyle = it.isBrand ? brandStyle(it.key) : '';
       const star = (it.isBrand || SET_TAB==='channel') ? `<span class="star ${isFav(it.key)?'on':''}" data-fav="${it.key}">${isFav(it.key)?'★':'☆'}</span>` : '';
-      return `<div class="lrow" data-i="${i}"><div class="lic" style="${icStyle}">${ab}</div><div class="lmain"><div class="lnm">${highlight(it.key, q)}</div><div class="lsub">${it.sub}</div><div class="lbar"><i style="width:${pct}%"></i></div></div><div class="lval"><div class="lamt">${fmtK(it.amt)}</div><div class="lpct ${marginCls}">${marginTxt}</div></div>${star}</div>`;
+      return `<div class="lrow" data-i="${i}"><div class="lic" style="${icStyle}">${ab}</div><div class="lmain"><div class="lnm">${highlight(it.key, q)}</div><div class="lsub">${it.sub}</div><div class="lbar"><i style="width:${pct}%"></i></div></div><div class="lval"><div class="lamt">${fmtK(it.amt)}</div><div class="lpct ${marginCls}">${marginChip}${marginTxt}</div></div>${star}</div>`;
     }).join('');
     list.querySelectorAll('.star').forEach(s => s.addEventListener('click', e => {
       e.stopPropagation();
