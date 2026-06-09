@@ -2530,22 +2530,34 @@ if ('serviceWorker' in navigator) {
   function openTxnModal() {
     if (!TXN || !TXN.items) { toast('거래내역 데이터 없음'); return; }
     let items = TXN.items.slice();
+    // v2.47.45: 채널 필터 chip — 상위 6개 채널
+    const channelCounts = items.reduce((acc, it) => { acc[it.c] = (acc[it.c]||0) + 1; return acc; }, {});
+    const topChannels = Object.entries(channelCounts).sort((a,b) => b[1] - a[1]).slice(0, 6);
+    let activeFilter = '';
+    const chipsHtml = `<div id="txnChannels" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;">
+      <button data-c="" class="txn-chip active" style="padding:5px 11px;font-size:11px;background:#1b64da;color:#fff;border:none;border-radius:11px;font-family:inherit;font-weight:600;cursor:pointer;">전체</button>
+      ${topChannels.map(([c, n]) => `<button data-c="${c}" class="txn-chip" style="padding:5px 11px;font-size:11px;background:rgba(27,100,218,0.10);color:#1b64da;border:1px solid rgba(27,100,218,0.18);border-radius:11px;font-family:inherit;font-weight:600;cursor:pointer;">${c} ${n}</button>`).join('')}
+    </div>`;
     const html = `
       <div class="search-bar" style="margin-bottom:10px;"><span class="ic">🔍</span><input id="txnQ" placeholder="주문번호/상품명/품목코드/브랜드" autocomplete="off" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:13.5px;font-family:inherit;color:var(--ink);"></div>
-      <div style="font-size:11px;color:var(--dim);margin-bottom:8px;font-family:'MonoLocal',monospace;">총 ${TXN.count}건 (최신 정산순)</div>
+      ${chipsHtml}
+      <div style="font-size:11px;color:var(--dim);margin-bottom:8px;font-family:'MonoLocal',monospace;" id="txnCount">총 ${TXN.count}건 (최신 정산순)</div>
       <div id="txnList"></div>
     `;
     openModal('최근 거래내역', html);
     const render = () => {
       const q = (document.getElementById('txnQ').value || '').trim().toLowerCase();
       let view = items;
-      if (q) view = items.filter(it =>
+      if (activeFilter) view = view.filter(it => it.c === activeFilter);
+      if (q) view = view.filter(it =>
         (it.o||'').toLowerCase().includes(q) ||
         (it.p||'').toLowerCase().includes(q) ||
         (it.pc||'').toLowerCase().includes(q) ||
         (it.b||'').toLowerCase().includes(q) ||
         (it.c||'').toLowerCase().includes(q)
       );
+      const cntEl = document.getElementById('txnCount');
+      if (cntEl) cntEl.textContent = `${view.length}건 / 전체 ${TXN.count}건${activeFilter?` · 채널: ${activeFilter}`:''}${q?` · 검색: "${q}"`:''}`;
       const show = view.slice(0, 100);
       const list = document.getElementById('txnList');
       if (!view.length) { list.innerHTML = '<div class="empty">결과 없음</div>'; return; }
@@ -2556,6 +2568,24 @@ if ('serviceWorker' in navigator) {
     };
     render();
     document.getElementById('txnQ').addEventListener('input', render);
+    // v2.47.45: 채널 chip 클릭 → 필터
+    setTimeout(() => {
+      document.querySelectorAll('.txn-chip').forEach(btn => btn.addEventListener('click', () => {
+        haptic();
+        activeFilter = btn.dataset.c || '';
+        document.querySelectorAll('.txn-chip').forEach(b => {
+          b.classList.remove('active');
+          b.style.background = 'rgba(27,100,218,0.10)';
+          b.style.color = '#1b64da';
+          b.style.border = '1px solid rgba(27,100,218,0.18)';
+        });
+        btn.classList.add('active');
+        btn.style.background = '#1b64da';
+        btn.style.color = '#fff';
+        btn.style.border = 'none';
+        render();
+      }));
+    }, 50);
   }
 
   // 계산기 모달
