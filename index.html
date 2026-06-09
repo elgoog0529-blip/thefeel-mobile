@@ -3058,6 +3058,7 @@ if ('serviceWorker' in navigator) {
       {c:'JPY 100', v:fx.JPY*100, d: delta('JPY', fx.JPY)},
     ];
     if (fx.GBP) cur.push({c:'GBP', v:fx.GBP, d: delta('GBP', fx.GBP)});  // v2.47.22
+    if (fx.CNY) cur.push({c:'CNY', v:fx.CNY, d: delta('CNY', fx.CNY)});  // v2.47.60 — 중국 명품 구매대행
     document.getElementById('fxRow').innerHTML = cur.map(x => {
       const dt = x.d != null ? (x.d >= 0 ? `▲ ${x.d.toFixed(2)}%` : `▼ ${Math.abs(x.d).toFixed(2)}%`) : gen;
       const cls = x.d != null ? (x.d >= 0 ? 'up' : 'down') : '';
