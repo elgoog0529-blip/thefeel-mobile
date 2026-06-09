@@ -587,7 +587,13 @@ if ('serviceWorker' in navigator) {
     <!-- ===================== 매출명세서 (v2.46.4 — 손익분기 → 매출명세 화면 통째 교체) ===================== -->
     <div class="screen" data-screen="breakeven" hidden>
       <div class="hero-card" style="margin-bottom:14px;">
-        <div class="hero-row"><span class="hero-eyebrow">📋 매출명세서</span><span class="hero-period" id="dsHeroPeriod">최근</span></div>
+        <div class="hero-row">
+          <span class="hero-eyebrow">📋 매출명세서</span>
+          <span style="display:flex;gap:6px;align-items:center;">
+            <span id="dsHeroMarginChip" style="display:none;font-size:10px;padding:3px 8px;border-radius:10px;font-weight:700;font-family:'MonoLocal',monospace;">—</span>
+            <span class="hero-period" id="dsHeroPeriod">최근</span>
+          </span>
+        </div>
         <div class="hero-amount" id="dsHeroAmount2">—</div>
         <div class="hero-delta" id="dsHeroDelta2">매일 PC에서 import한 데이터 기반</div>
         <div class="hero-mini" id="dsHeroMini2"></div>
@@ -1986,6 +1992,27 @@ if ('serviceWorker' in navigator) {
     // 새 화면 element 있으면 매출명세 렌더, 없으면 (옛 캐시) skip
     const amt = document.getElementById('dsHeroAmount2');
     if (!amt) return;
+
+    // v2.47.18: hero 마진율 색상 코딩 (그린=좋음/노랑=평균/오렌지=주의) + chip 표시
+    try {
+      const r2 = D.recent2026 || D.total || {};
+      const p2 = (r2.profit != null) ? r2.profit : ((r2.settle||0) - (r2.cost||0));
+      const rate2 = (r2.cost||0) > 0 ? p2 / r2.cost * 100 : 0;
+      const heroCard = document.querySelector('.screen[data-screen="breakeven"] .hero-card');
+      const chip = document.getElementById('dsHeroMarginChip');
+      if (heroCard && chip) {
+        let accent = 'linear-gradient(135deg,#1a1f2e,#2a1f5e)';
+        let chipBg = 'rgba(108,139,255,0.18)', chipFg = '#6c8bff', label = `${rate2.toFixed(1)}%`;
+        if (rate2 >= 27) { accent = 'linear-gradient(135deg,#0f3a2a,#1a5e3a)'; chipBg = 'rgba(3,199,90,0.20)'; chipFg = '#02a647'; label = '🟢 ' + rate2.toFixed(1) + '%'; }
+        else if (rate2 >= 22) { accent = 'linear-gradient(135deg,#3a2a0f,#5e3a1a)'; chipBg = 'rgba(245,158,11,0.20)'; chipFg = '#f59e0b'; label = '🟡 ' + rate2.toFixed(1) + '%'; }
+        else if (rate2 > 0) { accent = 'linear-gradient(135deg,#3a1a1a,#5e2a2a)'; chipBg = 'rgba(239,68,68,0.20)'; chipFg = '#dc2626'; label = '🟠 ' + rate2.toFixed(1) + '%'; }
+        heroCard.style.background = accent;
+        chip.style.display = 'inline-block';
+        chip.style.background = chipBg;
+        chip.style.color = chipFg;
+        chip.textContent = label;
+      }
+    } catch {}
 
     // v2.47.14: 이번 달 진행률 게이지 (시간 vs 매출 외삽)
     try {
