@@ -1837,11 +1837,20 @@ if ('serviceWorker' in navigator) {
     let titleText = '';
     if (SET_TAB === 'channel') {
       titleText = '채널별 정산';
-      items = (D.channels26 || D.channels || []).map(c => ({
-        key: c.name, sub: `${fmtN(c.qty)}건 · 이익 ${fmtK(c.profit)}`,
-        amt: c.settle, head: c.sales, profit: c.profit, qty: c.qty,
-        margin: c.sales > 0 ? c.profit/c.sales*100 : 0, isBrand: false,
-      }));
+      items = (D.channels26 || D.channels || []).map(c => {
+        // v2.47.57: 정산 주기 미니 라벨
+        const days = _channelSettleDays(c.name);
+        let cycle = '';
+        if (days === 1) cycle = ' · 🟢 매일';
+        else if (days && days <= 7) cycle = ` · 🟡 D+${days}`;
+        else if (days && days <= 15) cycle = ` · 🟠 D+${days}`;
+        else if (days && days >= 30) cycle = ` · 🔴 월정산`;
+        return {
+          key: c.name, sub: `${fmtN(c.qty)}건 · 이익 ${fmtK(c.profit)}${cycle}`,
+          amt: c.settle, head: c.sales, profit: c.profit, qty: c.qty,
+          margin: c.sales > 0 ? c.profit/c.sales*100 : 0, isBrand: false,
+        };
+      });
     } else if (SET_TAB === 'month') {
       titleText = '월별 정산';
       items = (D.months26 || D.months || []).slice().reverse().map(m => {
