@@ -586,9 +586,9 @@ if ('serviceWorker' in navigator) {
 
     <!-- ===================== 매출명세서 (v2.46.4 — 손익분기 → 매출명세 화면 통째 교체) ===================== -->
     <div class="screen" data-screen="breakeven" hidden>
-      <div class="hero-card" style="margin-bottom:14px;">
+      <div class="hero-card" id="dsHeroCard" style="margin-bottom:14px;cursor:pointer;">
         <div class="hero-row">
-          <span class="hero-eyebrow">📋 매출명세서</span>
+          <span class="hero-eyebrow">📋 매출명세서 (탭하여 요약)</span>
           <span style="display:flex;gap:6px;align-items:center;">
             <span id="dsHeroMarginChip" style="display:none;font-size:10px;padding:3px 8px;border-radius:10px;font-weight:700;font-family:'MonoLocal',monospace;">—</span>
             <span class="hero-period" id="dsHeroPeriod">최근</span>
@@ -2867,6 +2867,31 @@ if ('serviceWorker' in navigator) {
   });
 
   document.getElementById('rowRefresh').addEventListener('click', () => { haptic(); loadData(true); loadFx(); });
+
+  // v2.47.25: freshChip 클릭 → 즉시 데이터 새로고침 (가장 자주 확인하는 위치)
+  document.getElementById('freshChip')?.addEventListener('click', () => {
+    haptic();
+    toast('🔄 데이터 새로고침 중...', 'info', 1500);
+    Promise.all([loadData(true), loadFx()]).then(() => {
+      toast('✓ 최신 데이터 로드', 'success', 2000);
+    }).catch(() => toast('새로고침 실패', 'error'));
+  });
+  document.getElementById('freshChip').style.cursor = 'pointer';
+  document.getElementById('freshChip').title = '클릭하여 즉시 새로고침';
+
+  // v2.47.25: 매출명세서 hero 클릭 → 이번 달 요약 토스트
+  document.getElementById('dsHeroCard')?.addEventListener('click', () => {
+    if (!D) return;
+    haptic();
+    const r = D.recent2026 || D.total || {};
+    const profit = r.profit != null ? r.profit : ((r.settle||0) - (r.cost||0));
+    const marginRate = (r.cost||0) > 0 ? profit/r.cost*100 : 0;
+    const aov = r.rows > 0 ? r.sales / r.rows : 0;
+    const topBrand = (D.brands26 || D.brands || [])[0];
+    const topChan = (D.channels26 || D.channels || [])[0];
+    const msg = `💎 2026 YTD\n매출 ${fmtK(r.sales||0)} · 이익 ${fmtK(profit)} (${marginRate.toFixed(1)}%)\n${fmtN(r.rows||0)}건 · AOV ${fmtK(aov)}\n🏆 ${topBrand?.name||'—'} · ${topChan?.name||'—'}`;
+    toast(msg, 'success', 8000);
+  });
 
   // v2.47.22: 전체 데이터 백업 다운로드 (JSON)
   document.getElementById('rowBackup')?.addEventListener('click', () => {
