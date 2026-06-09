@@ -684,6 +684,7 @@ if ('serviceWorker' in navigator) {
       <div class="sec-head"><span class="sec-title">데이터</span></div>
       <div class="list">
         <div class="srow" id="rowRefresh"><span class="sic">🔄</span><span class="stx">데이터 새로고침</span><span class="sval" id="dataGen">—</span></div>
+        <div class="srow" id="rowBackup"><span class="sic">💾</span><span class="stx">전체 데이터 백업 (JSON)</span><span class="chev">›</span></div>
         <div class="srow"><span class="sic">📊</span><span class="stx">총 거래 수</span><span class="sval" id="dataRows">—</span></div>
         <div class="srow"><span class="sic">💰</span><span class="stx">총 매출</span><span class="sval" id="dataSales">—</span></div>
         <div class="srow"><span class="sic">📈</span><span class="stx">총 이익</span><span class="sval" id="dataProfit">—</span></div>
@@ -2551,10 +2552,11 @@ if ('serviceWorker' in navigator) {
     }
     // 5분 이상 또는 없으면 fetch — 다중 API fallback
     if (cacheAge >= 5 * 60 * 1000 && navigator.onLine) {
+      // v2.47.22: GBP 추가 (영국 명품 - 버버리/스텔라/멀버리)
       const apis = [
-        { url: 'https://api.frankfurter.dev/v1/latest?from=KRW', parse: j => ({EUR:1/j.rates.EUR, USD:1/j.rates.USD, JPY:1/j.rates.JPY}) },
-        { url: 'https://open.er-api.com/v6/latest/KRW', parse: j => ({EUR:1/j.rates.EUR, USD:1/j.rates.USD, JPY:1/j.rates.JPY}) },
-        { url: 'https://api.exchangerate-api.com/v4/latest/KRW', parse: j => ({EUR:1/j.rates.EUR, USD:1/j.rates.USD, JPY:1/j.rates.JPY}) },
+        { url: 'https://api.frankfurter.dev/v1/latest?from=KRW', parse: j => ({EUR:1/j.rates.EUR, USD:1/j.rates.USD, JPY:1/j.rates.JPY, GBP:1/j.rates.GBP}) },
+        { url: 'https://open.er-api.com/v6/latest/KRW', parse: j => ({EUR:1/j.rates.EUR, USD:1/j.rates.USD, JPY:1/j.rates.JPY, GBP:1/j.rates.GBP}) },
+        { url: 'https://api.exchangerate-api.com/v4/latest/KRW', parse: j => ({EUR:1/j.rates.EUR, USD:1/j.rates.USD, JPY:1/j.rates.JPY, GBP:1/j.rates.GBP}) },
       ];
       for (const api of apis) {
         try {
@@ -2590,6 +2592,7 @@ if ('serviceWorker' in navigator) {
       {c:'USD', v:fx.USD, d: delta('USD', fx.USD)},
       {c:'JPY 100', v:fx.JPY*100, d: delta('JPY', fx.JPY)},
     ];
+    if (fx.GBP) cur.push({c:'GBP', v:fx.GBP, d: delta('GBP', fx.GBP)});  // v2.47.22
     document.getElementById('fxRow').innerHTML = cur.map(x => {
       const dt = x.d != null ? (x.d >= 0 ? `▲ ${x.d.toFixed(2)}%` : `▼ ${Math.abs(x.d).toFixed(2)}%`) : gen;
       const cls = x.d != null ? (x.d >= 0 ? 'up' : 'down') : '';
@@ -2828,6 +2831,37 @@ if ('serviceWorker' in navigator) {
   });
 
   document.getElementById('rowRefresh').addEventListener('click', () => { haptic(); loadData(true); loadFx(); });
+
+  // v2.47.22: 전체 데이터 백업 다운로드 (JSON)
+  document.getElementById('rowBackup')?.addEventListener('click', () => {
+    haptic();
+    try {
+      const backup = {
+        exportedAt: new Date().toISOString(),
+        user: typeof _AUTH_USER !== 'undefined' ? _AUTH_USER : null,
+        data: D || null,
+        inventory: INV || null,
+        md: MD || null,
+        transactions: TXN || null,
+        daily: DAILY || null,
+        naverRealtime: NAVER_RT || null,
+        notifications: _notifLoad ? _notifLoad() : null,
+        favorites: { brand: localStorage.getItem('favBrands') || '[]' },
+      };
+      const json = JSON.stringify(backup, null, 2);
+      const blob = new Blob([json], {type: 'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `thefeel-backup-${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const size = (json.length / 1024 / 1024).toFixed(2);
+      toast(`✓ 백업 다운로드 (${size}MB)`, 'success', 3500);
+    } catch (e) { toast('백업 실패: ' + e.message, 'error'); }
+  });
   document.getElementById('setOpenSite').addEventListener('click', () => {
     haptic(); window.open('https://smartstore.naver.com/stellastore', '_blank');
   });
