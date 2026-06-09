@@ -2121,7 +2121,7 @@ if ('serviceWorker' in navigator) {
           try { const wd = new Date(day.date).getDay(); isWeekend = (wd === 0 || wd === 6); } catch {}
           const barGrad = isWeekend ? 'linear-gradient(90deg,#9333ea,#6a1ed1)' : 'linear-gradient(90deg,var(--gold,#d4af37),var(--gold-deep,#b8941f))';
           const labelStyle = isWeekend ? 'color:#9333ea;' : 'color:var(--ink);';
-          return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);">
+          return `<div class="dsd-row" data-date="${day.date}" data-sales="${day.sales||0}" data-qty="${day.qty||0}" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer;">
             <div style="min-width:42px;font-family:'MonoLocal',monospace;font-size:12px;${labelStyle}font-weight:600;">${lbl}</div>
             <div style="flex:1;position:relative;height:18px;background:rgba(212,175,55,0.07);border-radius:4px;overflow:hidden;">
               <div style="position:absolute;left:0;top:0;height:100%;width:${w}%;background:${barGrad};border-radius:4px;transition:width .4s ease;"></div>
@@ -2130,6 +2130,18 @@ if ('serviceWorker' in navigator) {
             <div style="min-width:36px;text-align:right;font-size:10px;color:var(--soft);">${fmtN(day.qty||0)}건</div>
           </div>`;
         }).join('');
+        // v2.47.23: 일별 행 클릭 → 상세 토스트
+        list.querySelectorAll('.dsd-row').forEach(row => row.addEventListener('click', () => {
+          haptic();
+          const dsales = +(row.dataset.sales||0);
+          const dqty = +(row.dataset.qty||0);
+          const ddate = row.dataset.date || '';
+          const vsAvg = avgSales > 0 ? ((dsales - avgSales) / avgSales * 100) : 0;
+          const trend = vsAvg >= 0 ? `▲ ${vsAvg.toFixed(0)}%` : `▼ ${Math.abs(vsAvg).toFixed(0)}%`;
+          const aov = dqty > 0 ? Math.round(dsales / dqty) : 0;
+          const wd = ['일','월','화','수','목','금','토'][new Date(ddate).getDay()] || '?';
+          toast(`📅 ${ddate.slice(5)} (${wd}) · ${fmtK(dsales)} · ${dqty}건 · 평균 ${trend} · AOV ${fmtK(aov)}`, 'info', 5000);
+        }));
       } else {
         list.innerHTML = '<div class="empty" style="padding:20px;color:var(--dim);font-size:12px;text-align:center;">일별 데이터 로드 중…</div>';
       }
