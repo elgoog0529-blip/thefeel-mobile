@@ -1510,11 +1510,26 @@ if ('serviceWorker' in navigator) {
       <div class="stat"><div class="l">재고 자산</div><div class="v">${fmtK(D.inventory.total_value)}</div><div class="d">${fmtN(D.inventory.total_items)} SKU</div></div>
     `;
 
-    // 인사이트
+    // 인사이트 — v2.47.34: 클릭 시 페이지 이동
     const inEl = document.getElementById('insightRow');
-    inEl.innerHTML = buildInsights().map(i =>
-      `<div class="insight ${i.k}"><div class="l">${i.l}</div><div class="t">${i.t}</div><div class="d">${i.d}</div></div>`
+    const _insightTarget = {
+      '2026 이익률 1위':'breakeven',
+      '2026 매출 1위 채널':'breakeven',
+      '재고 잔존 (판매 시작)':'inventory',
+      '분기 달성':'inventory',
+      '🔥 떠오르는 모델':'inventory',
+      '🚨 재발주 시급':'inventory',
+      '수익성 주의 채널':'breakeven',
+    };
+    inEl.innerHTML = buildInsights().map((i, idx) =>
+      `<div class="insight ${i.k} insight-clickable" data-tgt="${_insightTarget[i.l]||''}" data-idx="${idx}" style="cursor:pointer;"><div class="l">${i.l}</div><div class="t">${i.t}</div><div class="d">${i.d}</div></div>`
     ).join('');
+    inEl.querySelectorAll('.insight-clickable').forEach(el => el.addEventListener('click', () => {
+      const tgt = el.dataset.tgt;
+      if (!tgt) return;
+      haptic();
+      document.querySelector(`.tab-item[data-screen="${tgt}"]`)?.click();
+    }));
 
     // 월별 차트 — months 없으면 카드 숨김
     const bars = document.getElementById('bars');
