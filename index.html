@@ -2292,32 +2292,78 @@ if ('serviceWorker' in navigator) {
     haptic(); window.open('https://smartstore.naver.com/stellastore', '_blank');
   });
 
-  // ─── v2.45.42: 업데이트 확인 ───
+  // ─── v2.47.2: 업데이트 확인 — 강화 (로고/아이콘 캐시 완전 갱신 + OS별 안내) ───
   document.getElementById('rowUpdate')?.addEventListener('click', async () => {
     haptic();
     const label = document.getElementById('updateLabel');
     const status = document.getElementById('updateStatus');
     const oldLabel = label.textContent;
-    label.textContent = '확인 중...';
-    status.textContent = '서버에서 새 버전 체크';
     try {
-      // 1) Service Worker 갱신 트리거
+      // 1) 서버 latest.json에서 현재 라이브 버전 확인
+      label.textContent = '⏳ 새 버전 체크...';
+      status.textContent = '서버 확인 중';
+      let serverVer = null, currentVer = (window._APP_VERSION || '');
+      try {
+        const r = await fetch('latest.json?_=' + Date.now(), {cache:'no-store'});
+        if (r.ok) { const j = await r.json(); serverVer = j.version || null; }
+      } catch {}
+
+      // 2) Service Worker 갱신 + 모든 캐시 클리어
+      label.textContent = '🧹 캐시 비우기...';
+      status.textContent = '옛 자산 제거';
       if ('serviceWorker' in navigator) {
         const reg = await navigator.serviceWorker.getRegistration();
-        if (reg) await reg.update();
+        if (reg) {
+          await reg.update();
+          // 새 SW 즉시 활성화 요청
+          if (reg.waiting) reg.waiting.postMessage({type: 'SKIP_WAITING'});
+        }
       }
-      // 2) 모든 캐시 비우기
       if ('caches' in window) {
         const keys = await caches.keys();
         await Promise.all(keys.map(k => caches.delete(k)));
       }
-      status.textContent = '새 버전 적용 중...';
-      // 3) 강제 새로고침 (캐시 무시)
-      setTimeout(() => location.reload(), 500);
+
+      // 3) 로고/아이콘 강제 갱신 — link href + manifest에 version 쿼리 추가
+      label.textContent = '🎨 로고 갱신...';
+      status.textContent = '새 아이콘 다운로드';
+      const _v = '?v=' + (serverVer || Date.now());
+      document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').forEach(l => {
+        const href = (l.getAttribute('href') || '').split('?')[0];
+        l.setAttribute('href', href + _v);
+      });
+      const mfst = document.querySelector('link[rel="manifest"]');
+      if (mfst) {
+        const href = (mfst.getAttribute('href') || 'manifest.webmanifest').split('?')[0];
+        mfst.setAttribute('href', href + _v);
+      }
+      // 페이지 내 <img src="icon.png"> 도 갱신
+      document.querySelectorAll('img[src*="icon.png"], img[src*="icon-512.png"]').forEach(img => {
+        const src = (img.getAttribute('src') || '').split('?')[0];
+        img.setAttribute('src', src + _v);
+      });
+
+      // 4) 결과 dialog
+      label.textContent = '✓ ' + (serverVer ? `v${serverVer} 적용` : '갱신 완료');
+      status.textContent = '3초 후 새로고침';
+
+      // 짧은 OS별 안내 (홈스크린 아이콘은 OS 캐시 한계)
+      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+      const inStandalone = window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone;
+      let guide = '';
+      if (inStandalone && isIOS) {
+        guide = '\n\n📱 홈스크린 아이콘은 iOS가 캐시해서 자동 변경 안 됩니다.\n새 로고를 보려면:\n1) 홈 화면에서 더필 아이콘 길게 눌러 삭제\n2) Safari로 다시 접속 → 공유 → 홈 화면에 추가';
+      } else if (inStandalone) {
+        guide = '\n\n📱 홈스크린 아이콘은 곧 자동 갱신됩니다 (Android는 1~5분 내).';
+      }
+      toast(`업데이트 완료 ${serverVer ? '(v'+serverVer+')' : ''}${guide}`, 'success', 6000);
+
+      // 5) 3초 후 hard reload
+      setTimeout(() => location.reload(), 3000);
     } catch (e) {
       label.textContent = oldLabel;
       status.textContent = '실패: ' + e.message;
-      toast('업데이트 실패: ' + e.message);
+      toast('업데이트 실패: ' + e.message, 'error');
     }
   });
   document.getElementById('rowTxn')?.addEventListener('click', () => { haptic(); openTxnModal(); });
