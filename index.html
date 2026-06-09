@@ -391,7 +391,7 @@ if ('serviceWorker' in navigator) {
           <div style="padding:9px;background:rgba(255,255,255,0.06);border-radius:9px;">
             <div style="font-size:9.5px;color:var(--soft);">예상 정산 <span style="color:#02a647;">88%</span></div>
             <div id="naverEst" style="font-size:14px;font-weight:700;color:#1a73e8;font-family:'MonoLocal',monospace;margin-top:2px;">—</div>
-            <div style="font-size:9.5px;color:var(--soft);">D+3~8</div>
+            <div style="font-size:9.5px;color:var(--soft);">매일 정산 · D+1</div>
           </div>
           <div style="padding:9px;background:rgba(255,255,255,0.06);border-radius:9px;">
             <div style="font-size:9.5px;color:var(--soft);">예상 이익 <span style="color:#f59e0b;">27.8%</span></div>
@@ -446,7 +446,7 @@ if ('serviceWorker' in navigator) {
         </div>
         <div id="reorderTop3" style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;"></div>
       </div>
-      <!-- v2.47.3: 다음 정산 D-Day 카드 (네이버 D+3~8 기준) -->
+      <!-- v2.47.3/55: 다음 정산 D-Day 카드 (네이버 매일 정산 · D+1 영업일) -->
       <div id="settleEtaCard" style="background:linear-gradient(135deg,rgba(245,158,11,0.10),rgba(27,100,218,0.05));border:1px solid rgba(245,158,11,0.25);border-radius:14px;padding:12px 14px;margin-bottom:12px;display:none;">
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div>
@@ -1281,17 +1281,17 @@ if ('serviceWorker' in navigator) {
       }));
     }
 
-    // v2.47.3: 다음 정산 D-Day 카드 (네이버 D+3 영업일)
+    // v2.47.3/55: 다음 정산 D-Day 카드 (네이버 매일 정산 · D+1 영업일)
     const settleCard = document.getElementById('settleEtaCard');
     if (settleCard && amt > 0) {
       settleCard.style.display = 'block';
-      // 다음 영업일 +3일 (간단 — 주말 고려)
-      const eta = new Date(); eta.setHours(0,0,0,0); eta.setDate(eta.getDate() + 3);
+      // 매일 정산 — D+1 영업일 (주말이면 다음 평일)
+      const eta = new Date(); eta.setHours(0,0,0,0); eta.setDate(eta.getDate() + 1);
       while (eta.getDay() === 0 || eta.getDay() === 6) eta.setDate(eta.getDate() + 1);
       const dday = Math.ceil((eta - Date.now()) / 86400000);
       setT('settleEtaDate', eta.getMonth()+1 + '월 ' + eta.getDate() + '일 (' + ['일','월','화','수','목','금','토'][eta.getDay()] + ')');
       setT('settleEtaAmt', fmtK(Math.round(amt * _NAVER_SETTLE_RATE)));
-      setT('settleEtaDday', dday <= 0 ? '오늘 입금 예정' : 'D-' + dday + ' · 88.24%');
+      setT('settleEtaDday', dday <= 0 ? '오늘 입금 예정' : 'D-' + dday + ' · 매일 정산 88.24%');
     }
     const wrap = document.getElementById('naverBreakdown');
     const byStatus = NAVER_RT.last24h?.byStatus || {};
@@ -3920,6 +3920,39 @@ if ('serviceWorker' in navigator) {
     } catch {}
   }
   setTimeout(_sundayClose, 3500);
+
+  // v2.47.54: 매월 1~3일 첫 진입 — 지난 달 마감 토스트
+  function _monthClose() {
+    try {
+      const now = new Date();
+      if (now.getDate() > 3) return;  // 1-3일만
+      const ym = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+      const key = 'monthClose:' + ym;
+      if (localStorage.getItem(key)) return;
+      if (!D || !D.months26) return;
+      // 지난 달 ym
+      const prev = new Date(now.getFullYear(), now.getMonth()-1, 1);
+      const prevYm = prev.getFullYear() + String(prev.getMonth()+1).padStart(2,'0');
+      const prevMonth = D.months26.find(m => m.ym === prevYm);
+      if (!prevMonth || !prevMonth.sales) return;
+      const marginRate = prevMonth.cost > 0 ? prevMonth.profit / prevMonth.cost * 100 : 0;
+      const aov = prevMonth.qty > 0 ? prevMonth.sales / prevMonth.qty : 0;
+      // 지지 달 비교
+      const pPrev = new Date(now.getFullYear(), now.getMonth()-2, 1);
+      const pPrevYm = pPrev.getFullYear() + String(pPrev.getMonth()+1).padStart(2,'0');
+      const pPrevMonth = D.months26.find(m => m.ym === pPrevYm);
+      let mom = '';
+      if (pPrevMonth && pPrevMonth.sales > 0) {
+        const momPct = (prevMonth.sales - pPrevMonth.sales) / pPrevMonth.sales * 100;
+        mom = ` · 전월 대비 ${momPct>=0?'▲':'▼'} ${Math.abs(momPct).toFixed(0)}%`;
+      }
+      const msg = `📊 ${prev.getMonth()+1}월 마감\n💰 매출 ${fmtK(prevMonth.sales)} · 이익 ${fmtK(prevMonth.profit)} (${marginRate.toFixed(1)}%)\n${fmtN(prevMonth.qty)}건 · AOV ${fmtK(aov)}${mom}`;
+      setTimeout(() => toast(msg, 'success', 10000), 3000);
+      if (typeof notifPush === 'function') notifPush('info', `📊 ${prev.getMonth()+1}월 마감`, `매출 ${fmtK(prevMonth.sales)} · 이익률 ${marginRate.toFixed(1)}%${mom}`);
+      localStorage.setItem(key, '1');
+    } catch {}
+  }
+  setTimeout(_monthClose, 4000);
 
   // ─── v2.47.10: 검색 자동완성 (최근 5개) ───
   function _searchRemember(key, q) {
