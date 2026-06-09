@@ -459,7 +459,17 @@ if ('serviceWorker' in navigator) {
           </div>
         </div>
       </div>
-      <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}} @keyframes slideDown{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}</style>
+      <style>
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+        @keyframes slideDown{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}
+        /* v2.47.26: 종 흔들림 */
+        @keyframes bellShake {
+          0%, 100% { transform: rotate(0); }
+          10%, 30%, 50%, 70% { transform: rotate(-12deg); }
+          20%, 40%, 60%, 80% { transform: rotate(12deg); }
+        }
+        .theme-btn.shake { animation: bellShake 0.9s ease-in-out; transform-origin: 50% 20%; }
+      </style>
 
       <div class="hero-card">
         <div class="hero-row">
@@ -1021,6 +1031,12 @@ if ('serviceWorker' in navigator) {
     arr.unshift({ type, title, body, ts: Date.now(), ...extra });
     _notifSave(arr);
     _notifUpdateDot();
+    // v2.47.26: 종 흔들림 애니메이션
+    const btn = document.getElementById('notifBtn');
+    if (btn) {
+      btn.classList.add('shake');
+      setTimeout(() => btn.classList.remove('shake'), 900);
+    }
   }
   function _notifTypeIcon(t) {
     return {
