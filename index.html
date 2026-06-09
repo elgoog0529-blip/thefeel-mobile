@@ -1019,6 +1019,53 @@ if ('serviceWorker' in navigator) {
   // ─── 데이터 로드 ───
   let D = null, INV = null, MD = null, TXN = null, DAILY = null, NAVER_RT = null;
 
+  // v2.47.56: 채널별 정산 주기 매핑 (D+N 영업일)
+  const CHANNEL_SETTLE_DAYS = {
+    '스토어팜': 1,      // 네이버 매일 정산
+    '네이버': 1,
+    '쿠팡': 15,         // D+15 (월 2회)
+    '11번가': 5,
+    '지마켓': 7,
+    '옥션': 7,
+    '카카오': 5,
+    '롯데온': 14,
+    '신세계': 14,
+    '롯데아이몰': 14,
+    'LF': 30,
+    '퀸잇': 14,
+    '크림': 7,
+    'SSF': 30,
+    '바이마': 7,        // BUYMA
+    '라쿠텐': 14,
+    '발란': 30,         // 명품 큐레이션 월말
+    '트렌비': 30,
+    '머스트잇': 30,
+    '포니링크': 30,
+    '쇼핑앤티': 30,
+    '포이즌': 30,
+    '에이블리': 7,
+    '홈앤쇼핑': 60,     // 홈쇼핑 월말 다음 달
+    'CJ': 60,
+    '현대': 60,         // 현대홈쇼핑
+    '지에스': 60,       // GS샵
+  };
+  function _channelSettleDays(channelName) {
+    if (!channelName) return null;
+    for (const [key, days] of Object.entries(CHANNEL_SETTLE_DAYS)) {
+      if (channelName.includes(key)) return days;
+    }
+    return null;
+  }
+  function _channelSettleLabel(channelName) {
+    const days = _channelSettleDays(channelName);
+    if (days == null) return '정산 주기 미설정';
+    if (days === 1) return '매일 정산 (D+1)';
+    if (days >= 60) return '월 정산 (다음 달 말)';
+    if (days >= 30) return '월 1회 (D+30)';
+    if (days >= 14) return '월 2회 (D+15)';
+    return `주 1회 (D+${days})`;
+  }
+
   // ─── v2.47.10: 알림 센터 (헤더 종 → 누적 모달) ───
   const NOTIF_KEY = 'notifQueue';
   const NOTIF_READ_KEY = 'notifReadAt';
@@ -1890,7 +1937,11 @@ if ('serviceWorker' in navigator) {
         const bs = D.channelBrands[it.key];
         crossHtml = `<div class="sec-head" style="margin-top:14px;"><span class="sec-title">주요 브랜드 TOP ${bs.length}</span></div><div class="list">${bs.map(b => `<div class="lrow"><div class="lic" style="${brandStyle(b.name)}">${logoFor(b.name)}</div><div class="lmain"><div class="lnm">${b.name}</div><div class="lsub">${fmtN(b.qty)}건 · 정산 ${fmtK(b.settle)}</div></div><div class="lval"><div class="lamt">${fmtK(b.sales)}</div></div></div>`).join('')}</div>`;
       }
+      // v2.47.56: 채널이면 정산 주기 표시
+      const settleLabel = !it.isBrand && SET_TAB === 'channel' ? _channelSettleLabel(it.key) : null;
+      const settleHtml = settleLabel ? `<div class="be-card" style="background:rgba(245,158,11,0.04);border-color:rgba(245,158,11,0.18);"><div class="be-top"><div class="be-name">💰 정산 주기</div><div class="be-diff" style="font-size:13px;">${settleLabel}</div></div></div>` : '';
       const body = `
+        ${settleHtml}
         <div class="be-card"><div class="be-top"><div class="be-name">매출</div><div class="be-diff up">${fmtK(it.head)}</div></div></div>
         <div class="be-card"><div class="be-top"><div class="be-name">정산 (VAT 별도)</div><div class="be-diff">${fmtK(it.amt)}</div></div></div>
         ${it.profit != null ? `<div class="be-card"><div class="be-top"><div class="be-name">이익</div><div class="be-diff ${it.profit>=0?'up':'down'}">${fmtK(it.profit)}</div></div><div class="be-foot"><span>이익률</span><b>${it.margin.toFixed(2)}%</b></div></div>` : ''}
