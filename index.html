@@ -2382,7 +2382,10 @@ if ('serviceWorker' in navigator) {
         if (allSales.length > 0) {
           calCard.hidden = false;
           const maxSales = Math.max(...allSales);
-          document.getElementById('calendarMonth').textContent = `${yy}.${String(mo+1).padStart(2,'0')} · ${Object.keys(monthDays).length}일 데이터`;
+          const sumSales = allSales.reduce((s,v) => s+v, 0);
+          const avgSales = sumSales / allSales.length;
+          const peakDate = Object.entries(monthDays).find(([d,v]) => v === maxSales)?.[0] || '';
+          document.getElementById('calendarMonth').textContent = `${yy}.${String(mo+1).padStart(2,'0')} · 합 ${fmtK(sumSales)} · 평균 ${fmtK(avgSales)}/일 · 최고 ${peakDate}일 ${fmtK(maxSales)}`;
           // 요일 헤더
           const wkHeader = ['일','월','화','수','목','금','토'].map((w, i) =>
             `<div style="text-align:center;padding:4px 0;font-weight:700;color:${i===0?'#dc2626':(i===6?'#1b64da':'var(--soft)')};">${w}</div>`
@@ -2395,8 +2398,10 @@ if ('serviceWorker' in navigator) {
             const intensity = maxSales > 0 ? sales / maxSales : 0;
             const bg = sales > 0 ? `rgba(245,158,11,${0.18 + intensity * 0.6})` : 'rgba(255,255,255,0.04)';
             const isToday = d === today_d;
+            const isPeak = sales === maxSales && sales > 0;
             const todayBorder = isToday ? 'box-shadow:0 0 0 1.5px #1b64da;' : '';
-            return `<div class="cal-day" data-d="${d}" data-sales="${sales}" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:${bg};border-radius:5px;color:${sales > 0 ? 'var(--text)' : 'var(--soft)'};font-weight:${isToday?'800':'600'};${todayBorder}cursor:pointer;font-size:11px;">${d}</div>`;
+            const peakBadge = isPeak ? '<div style="position:absolute;top:1px;right:2px;font-size:6px;">🏆</div>' : '';
+            return `<div class="cal-day" data-d="${d}" data-sales="${sales}" style="position:relative;aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:${bg};border-radius:5px;color:${sales > 0 ? 'var(--text)' : 'var(--soft)'};font-weight:${isToday?'800':'600'};${todayBorder}cursor:pointer;font-size:11px;">${d}${peakBadge}</div>`;
           }).join('');
           calGrid.innerHTML = wkHeader + emptyCells + dateCells;
           // 클릭 → 그 날 상세 토스트
