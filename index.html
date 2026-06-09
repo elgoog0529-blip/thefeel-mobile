@@ -2238,14 +2238,11 @@ if ('serviceWorker' in navigator) {
   function openBrandModal(b) {
     addRecent('brand', b.name);
     const m = b.sales>0?b.profit/b.sales*100:0;
-    // v2.47.76: 모달 상단에 실제 브랜드 로고 (Clearbit Logo API)
-    const officialLogoUrl = logoUrl(b.name, 256);
-    const wordmarkHtml = officialLogoUrl ? `
-      <div style="display:flex;align-items:center;justify-content:center;height:120px;border-radius:14px;margin-bottom:14px;background:#ffffff;box-shadow:0 8px 24px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(0,0,0,0.04);">
-        <img src="${officialLogoUrl}" alt="${b.name}" style="max-width:78%;max-height:78%;object-fit:contain;" onerror="this.parentElement.outerHTML='<div style=&quot;display:flex;align-items:center;justify-content:center;height:80px;border-radius:14px;margin-bottom:14px;${brandStyle(b.name, {serif:true}).replace(/"/g,'&quot;')}font-size:30px;letter-spacing:1.5px;&quot;>${logoFor(b.name)}</div>'">
-      </div>` : `
-      <div style="display:flex;align-items:center;justify-content:center;height:80px;border-radius:14px;margin-bottom:14px;${brandStyle(b.name, {serif:true})}font-size:30px;letter-spacing:1.5px;text-shadow:0 2px 8px rgba(0,0,0,0.25);box-shadow:0 8px 24px rgba(0,0,0,0.10);">
-        ${logoFor(b.name)}
+    // v2.47.77: 다중 fallback chain (사용자 업로드 → Clearbit → DuckDuckGo → Google → 약자) + 업로드 버튼
+    const wordmarkHtml = `
+      <div style="position:relative;display:flex;align-items:center;justify-content:center;height:130px;border-radius:14px;margin-bottom:14px;background:#ffffff;box-shadow:0 8px 24px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(0,0,0,0.04);overflow:hidden;">
+        <div style="width:75%;height:75%;display:flex;align-items:center;justify-content:center;">${logoImgChain(b.name, 256)}</div>
+        <button class="brand-logo-upload" data-brand="${b.name.replace(/"/g,'&quot;')}" title="이 브랜드 로고 직접 업로드" style="position:absolute;top:8px;right:8px;background:rgba(27,100,218,0.10);border:1px solid rgba(27,100,218,0.18);color:#1b64da;width:30px;height:30px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;">📷</button>
       </div>`;
     // openModal 호출 시 wordmarkHtml 사용 시 첨가됨 (아래에서 body에 prepend)
     // 매출 - 정산(VAT포함 = settle ~ sales와 비교) — 우리 데이터 settle은 VAT 별도. 매출 - settle*1.1이 미수
@@ -2267,6 +2264,15 @@ if ('serviceWorker' in navigator) {
       ${miniTrendSvg(D.brandTrend && D.brandTrend[b.name])}
       ${chsHtml}
     `, {share:{title:`${b.name} 매출`, text:`매출 ${fmtK(b.sales)} · 이익 ${fmtK(b.profit)} (${m.toFixed(1)}%)`}});
+    // v2.47.77: 로고 업로드 버튼 핸들러
+    setTimeout(() => {
+      document.querySelectorAll('.brand-logo-upload').forEach(btn => btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const brandName = btn.dataset.brand;
+        const ok = await userUploadBrandLogo(brandName);
+        if (ok) { closeModal?.(); setTimeout(() => openBrandModal(b), 200); }
+      }));
+    }, 100);
   }
   function openChannelModal(c) {
     addRecent('channel', c.name);
