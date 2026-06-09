@@ -604,7 +604,7 @@ if ('serviceWorker' in navigator) {
         <div class="hero-row">
           <span class="hero-eyebrow">📋 매출명세서 (탭=요약 · 길게=공유)</span>
           <span style="display:flex;gap:6px;align-items:center;">
-            <span id="dsHeroMarginChip" style="display:none;font-size:10px;padding:3px 8px;border-radius:10px;font-weight:700;font-family:'MonoLocal',monospace;">—</span>
+            <span id="dsHeroMarginChip" style="display:none;font-size:10px;padding:3px 8px;border-radius:10px;font-weight:700;font-family:'MonoLocal',monospace;cursor:pointer;" title="마진 추이 차트로 이동">—</span>
             <span class="hero-period" id="dsHeroPeriod">최근</span>
           </span>
         </div>
@@ -2353,6 +2353,15 @@ if ('serviceWorker' in navigator) {
         chip.style.background = chipBg;
         chip.style.color = chipFg;
         chip.textContent = label;
+        // v2.47.66: chip 클릭 → 마진 추이 차트로 스크롤
+        chip.onclick = (e) => {
+          e.stopPropagation();
+          haptic();
+          const target = document.getElementById('marginChartCard');
+          if (target && !target.hidden) {
+            target.scrollIntoView({behavior: 'smooth', block: 'center'});
+          }
+        };
       }
     } catch {}
 
