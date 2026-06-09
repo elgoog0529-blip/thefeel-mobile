@@ -678,6 +678,7 @@ if ('serviceWorker' in navigator) {
       <div class="list">
         <div class="srow" id="rowTheme"><span class="sic">🌓</span><span class="stx">테마</span><span class="sval" id="themeLabel">시스템</span><span class="chev">›</span></div>
         <div class="srow"><span class="sic">📳</span><span class="stx">햅틱 피드백 (Android)</span><div class="sw on" id="swHaptic"></div></div>
+        <div class="srow" id="rowPushNotif"><span class="sic">🔔</span><span class="stx">푸시 알림 (큰 주문 / 환율 변동)</span><div class="sw" id="swPushNotif"></div></div>
       </div>
 
       <div class="sec-head"><span class="sec-title">데이터</span></div>
@@ -1097,6 +1098,11 @@ if ('serviceWorker' in navigator) {
     newBigs.forEach(it => {
       notifPush('order', `💰 ${fmtK(it.totalPaymentAmount)} 결제`, it.productName || '', {amount: it.totalPaymentAmount, orderId: it.productOrderId});
     });
+    // v2.47.21: 푸시 알림 — 가장 큰 1건만 (스팸 방지)
+    if (newBigs.length > 0 && typeof pushNotify === 'function') {
+      const top = newBigs.sort((a,b) => (b.totalPaymentAmount||0) - (a.totalPaymentAmount||0))[0];
+      pushNotify(`💰 큰 주문 ${fmtK(top.totalPaymentAmount)}`, (top.productName || '').slice(0, 60) + (newBigs.length > 1 ? ` (외 ${newBigs.length-1}건)` : ''));
+    }
   }
   // v2.46.17: 실시간 카드 — 이익률은 원가 대비 (사용자 룰)
   const _NAVER_SETTLE_RATE = 0.8824;            // 정산 / 매출
@@ -2599,6 +2605,7 @@ if ('serviceWorker' in navigator) {
         const cost = eurDelta >= 0 ? '원가 상승 주의' : '원가 하락 기회';
         toast(`${emoji} EUR/KRW ${dir} ${Math.abs(eurDelta).toFixed(2)}% — ${cost}`, eurDelta >= 0 ? 'warning' : 'success', 6000);
         if (typeof notifPush === 'function') notifPush('fx', `${emoji} EUR/KRW ${dir} ${Math.abs(eurDelta).toFixed(2)}%`, cost + ` · 어제 대비 (${fx.EUR.toFixed(2)})`);
+        if (typeof pushNotify === 'function') pushNotify(`${emoji} EUR/KRW ${dir} ${Math.abs(eurDelta).toFixed(2)}%`, cost);
         localStorage.setItem(alertKey, '1');
       }
     } catch {}
@@ -3216,6 +3223,48 @@ if ('serviceWorker' in navigator) {
   // v2.47.10: 알림 센터 종 — 클릭 시 모달 + 초기 dot 갱신
   document.getElementById('notifBtn')?.addEventListener('click', () => notifOpenModal());
   setTimeout(() => _notifUpdateDot(), 200);
+
+  // ─── v2.47.21: 푸시 알림 권한 + foreground native notification ───
+  const PUSH_KEY = 'pushNotifEnabled';
+  function _pushIsEnabled() {
+    return localStorage.getItem(PUSH_KEY) === '1' && ('Notification' in window) && Notification.permission === 'granted';
+  }
+  function _pushSyncToggle() {
+    const sw = document.getElementById('swPushNotif');
+    if (!sw) return;
+    if (_pushIsEnabled()) sw.classList.add('on'); else sw.classList.remove('on');
+  }
+  // foreground 네이티브 알림 — toast 호출 시점에 같이 노출 (큰 주문, 환율 등)
+  function pushNotify(title, body) {
+    if (!_pushIsEnabled()) return;
+    try {
+      const n = new Notification(title, { body, icon: 'icon.png', badge: 'icon.png', tag: 'thefeel-' + Date.now(), silent: false });
+      n.onclick = () => { window.focus(); n.close(); };
+    } catch (e) { console.warn('push fail:', e.message); }
+  }
+  document.getElementById('rowPushNotif')?.addEventListener('click', async () => {
+    haptic();
+    if (!('Notification' in window)) { toast('이 브라우저는 푸시 알림을 지원하지 않습니다', 'error', 3500); return; }
+    if (_pushIsEnabled()) {
+      localStorage.removeItem(PUSH_KEY);
+      _pushSyncToggle();
+      toast('푸시 알림 비활성화', 'info');
+      return;
+    }
+    let perm = Notification.permission;
+    if (perm !== 'granted') {
+      try { perm = await Notification.requestPermission(); } catch {}
+    }
+    if (perm === 'granted') {
+      localStorage.setItem(PUSH_KEY, '1');
+      _pushSyncToggle();
+      pushNotify('🔔 더필코리아 알림 활성화', '큰 주문 / 환율 변동 / 재발주 위험 알림이 푸시됩니다');
+      toast('푸시 알림 활성화', 'success');
+    } else {
+      toast('알림 권한이 거부되었습니다. 브라우저 설정에서 허용해주세요', 'error', 4500);
+    }
+  });
+  setTimeout(_pushSyncToggle, 300);
 
   // v2.47.16: 글로벌 빠른 검색 — 브랜드/모델/SKU/거래 통합
   document.getElementById('globalSearchBtn')?.addEventListener('click', () => {
