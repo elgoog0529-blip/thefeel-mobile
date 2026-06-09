@@ -3364,7 +3364,13 @@ if ('serviceWorker' in navigator) {
     const aov = r.rows > 0 ? r.sales / r.rows : 0;
     const topBrand = (D.brands26 || D.brands || [])[0];
     const topChan = (D.channels26 || D.channels || [])[0];
-    const shareText = `💎 더필코리아 2026 YTD\n매출 ${fmtK(r.sales||0)} · 이익 ${fmtK(profit)} (${marginRate.toFixed(1)}%)\n${fmtN(r.rows||0)}건 · AOV ${fmtK(aov)}\n🏆 ${topBrand?.name||'—'} · ${topChan?.name||'—'}`;
+    // v2.47.68: share 텍스트에 EUR 환율 (밀라노 수입가 영향)
+    let fxLine = '';
+    try {
+      const fxCache = JSON.parse(localStorage.getItem('fxCache') || '{}');
+      if (fxCache?.fx?.EUR) fxLine = `\n💱 EUR/KRW ${fxCache.fx.EUR.toFixed(2)}`;
+    } catch {}
+    const shareText = `💎 더필코리아 2026 YTD\n매출 ${fmtK(r.sales||0)} · 이익 ${fmtK(profit)} (${marginRate.toFixed(1)}%)\n${fmtN(r.rows||0)}건 · AOV ${fmtK(aov)}\n🏆 ${topBrand?.name||'—'} · ${topChan?.name||'—'}${fxLine}`;
     if (share && navigator.share) {
       try { navigator.share({title:'더필코리아 매출 요약', text: shareText}); haptic(); return; } catch {}
     }
