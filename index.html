@@ -3410,7 +3410,10 @@ if ('serviceWorker' in navigator) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `thefeel-backup-${new Date().toISOString().slice(0,10)}.json`;
+      // v2.47.67: 파일명에 사용자 ID + 시각 포함 (다중 사용자 백업 구분)
+      const userId = (typeof _AUTH_USER !== 'undefined' && _AUTH_USER) ? '_' + _AUTH_USER : '';
+      const ts = new Date().toISOString().slice(0,16).replace(/[-:]/g,'').replace('T','_');
+      a.download = `thefeel-backup${userId}_${ts}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
