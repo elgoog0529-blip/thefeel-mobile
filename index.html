@@ -2396,12 +2396,16 @@ if ('serviceWorker' in navigator) {
             const d = i + 1;
             const sales = monthDays[String(d).padStart(2,'0')] || 0;
             const intensity = maxSales > 0 ? sales / maxSales : 0;
-            const bg = sales > 0 ? `rgba(245,158,11,${0.18 + intensity * 0.6})` : 'rgba(255,255,255,0.04)';
+            let bg = sales > 0 ? `rgba(245,158,11,${0.18 + intensity * 0.6})` : 'rgba(255,255,255,0.04)';
+            // v2.47.49: 주말 셀 색상 살짝 다르게
+            const wkd = new Date(yy, mo, d).getDay();
+            if (sales === 0 && (wkd === 0 || wkd === 6)) bg = wkd === 0 ? 'rgba(220,38,38,0.06)' : 'rgba(27,100,218,0.06)';
+            const dayColor = wkd === 0 ? '#dc2626' : (wkd === 6 ? '#1b64da' : (sales > 0 ? 'var(--text)' : 'var(--soft)'));
             const isToday = d === today_d;
             const isPeak = sales === maxSales && sales > 0;
             const todayBorder = isToday ? 'box-shadow:0 0 0 1.5px #1b64da;' : '';
             const peakBadge = isPeak ? '<div style="position:absolute;top:1px;right:2px;font-size:6px;">🏆</div>' : '';
-            return `<div class="cal-day" data-d="${d}" data-sales="${sales}" style="position:relative;aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:${bg};border-radius:5px;color:${sales > 0 ? 'var(--text)' : 'var(--soft)'};font-weight:${isToday?'800':'600'};${todayBorder}cursor:pointer;font-size:11px;">${d}${peakBadge}</div>`;
+            return `<div class="cal-day" data-d="${d}" data-sales="${sales}" style="position:relative;aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:${bg};border-radius:5px;color:${dayColor};font-weight:${isToday?'800':'600'};${todayBorder}cursor:pointer;font-size:11px;">${d}${peakBadge}</div>`;
           }).join('');
           calGrid.innerHTML = wkHeader + emptyCells + dateCells;
           // 클릭 → 그 날 상세 토스트
