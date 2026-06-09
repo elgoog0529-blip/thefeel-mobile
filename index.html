@@ -1969,7 +1969,9 @@ if ('serviceWorker' in navigator) {
         <div class="be-card"><div class="be-top"><div class="be-name">거래 수</div><div class="be-diff">${fmtN(it.qty)}건</div></div></div>
         ${crossHtml}
       `;
-      const share = {title: `${it.key} 정산`, text: `매출 ${fmtK(it.head)} · 정산 ${fmtK(it.amt)}${it.profit!=null?` · 이익 ${fmtK(it.profit)} (${it.margin.toFixed(1)}%)`:''} · ${fmtN(it.qty)}건`};
+      // v2.47.59: share 텍스트에 정산 주기 포함
+      const settleCycleTxt = !it.isBrand && SET_TAB === 'channel' && settleLabel ? ` · 💰 ${settleLabel}` : '';
+      const share = {title: `${it.key} 정산`, text: `매출 ${fmtK(it.head)} · 정산 ${fmtK(it.amt)}${it.profit!=null?` · 이익 ${fmtK(it.profit)} (${it.margin.toFixed(1)}%)`:''} · ${fmtN(it.qty)}건${settleCycleTxt}`};
       openModal(it.key, body, {share});
     }));
   }
@@ -2270,6 +2272,32 @@ if ('serviceWorker' in navigator) {
     // 새 화면 element 있으면 매출명세 렌더, 없으면 (옛 캐시) skip
     const amt = document.getElementById('dsHeroAmount2');
     if (!amt) return;
+
+    // v2.47.59: hero에 채널별 정산 주기 분포 미니 chip
+    try {
+      const channels = (D.channels26 || D.channels || []);
+      if (channels.length > 0) {
+        const distribution = {daily:0, weekly:0, biweekly:0, monthly:0};
+        let totalSales = 0;
+        channels.forEach(c => {
+          const days = _channelSettleDays(c.name);
+          totalSales += (c.sales||0);
+          if (days === 1) distribution.daily += (c.sales||0);
+          else if (days && days <= 7) distribution.weekly += (c.sales||0);
+          else if (days && days <= 15) distribution.biweekly += (c.sales||0);
+          else if (days && days >= 30) distribution.monthly += (c.sales||0);
+        });
+        if (totalSales > 0) {
+          const dailyPct = (distribution.daily / totalSales * 100).toFixed(0);
+          const monthlyPct = (distribution.monthly / totalSales * 100).toFixed(0);
+          const heroDelta = document.getElementById('dsHeroDelta2');
+          if (heroDelta && !heroDelta.dataset.cycle) {
+            heroDelta.innerHTML += `<br><span style="font-size:10.5px;color:var(--soft);margin-top:3px;display:inline-block;">💰 정산: 🟢매일 ${dailyPct}% · 🔴월정산 ${monthlyPct}%</span>`;
+            heroDelta.dataset.cycle = '1';
+          }
+        }
+      }
+    } catch {}
 
     // v2.47.40: hero delta에 오늘 vs 일평균 비교 + v2.47.43: 큰 차이 자동 알림
     try {
