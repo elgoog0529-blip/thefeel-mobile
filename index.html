@@ -2042,6 +2042,21 @@ if ('serviceWorker' in navigator) {
             <div class="sec-head" style="margin-top:14px;"><span class="sec-title">사이즈별 (${model.sizes.length})</span><span class="sec-more">신/구 코드 모두</span></div>
             <div class="list">${sizesHtml}</div>
           `, {share:{title:`${model.brand} ${model.model}`, text:`재고 ${fmtN(model.stockTotal)}개 · ${codeSet.size}개 코드 통합 · 자산 ${fmtK(model.stockValue)}`}});
+          // v2.47.38: 사이즈 행 클릭 → 그 사이즈 단가로 계산기 자동 입력
+          setTimeout(() => {
+            document.querySelectorAll('.sku-size-row').forEach(row => row.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const cost = +row.dataset.cost;
+              const inp = document.getElementById('calcSellPrice');
+              if (!inp || !cost) return;
+              haptic();
+              inp.value = Math.round(cost * 1.45);
+              inp.dispatchEvent(new Event('input', {bubbles: true}));
+              inp.scrollIntoView({behavior: 'smooth', block: 'center'});
+              inp.focus();
+              toast(`💰 ${row.dataset.code} 단가 ${fmtK(cost)} → 계산기 적용`, 'info', 2500);
+            }));
+          }, 60);
           // 판매가 입력 이벤트
           setTimeout(() => {
             const inp = document.getElementById('calcSellPrice');
