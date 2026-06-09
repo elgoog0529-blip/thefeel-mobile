@@ -685,6 +685,7 @@ if ('serviceWorker' in navigator) {
       <div class="list">
         <div class="srow" id="rowRefresh"><span class="sic">🔄</span><span class="stx">데이터 새로고침</span><span class="sval" id="dataGen">—</span></div>
         <div class="srow" id="rowBackup"><span class="sic">💾</span><span class="stx">전체 데이터 백업 (JSON)</span><span class="chev">›</span></div>
+        <div class="srow" id="rowRestore"><span class="sic">📂</span><span class="stx">백업 복구 (설정만)</span><span class="chev">›</span></div>
         <div class="srow"><span class="sic">📊</span><span class="stx">총 거래 수</span><span class="sval" id="dataRows">—</span></div>
         <div class="srow"><span class="sic">💰</span><span class="stx">총 매출</span><span class="sval" id="dataSales">—</span></div>
         <div class="srow"><span class="sic">📈</span><span class="stx">총 이익</span><span class="sval" id="dataProfit">—</span></div>
@@ -2823,13 +2824,36 @@ if ('serviceWorker' in navigator) {
   }
   function cycleTheme() {
     const cur = localStorage.getItem('theme') || 'auto';
-    const next = cur === 'auto' ? 'light' : cur === 'light' ? 'dark' : 'auto';
+    // v2.47.24: auto → time → light → dark → auto (시각 기반 추가)
+    const next = cur === 'auto' ? 'time' : cur === 'time' ? 'light' : cur === 'light' ? 'dark' : 'auto';
     applyTheme(next);
     haptic();
-    toast('테마: ' + (next === 'auto' ? '시스템' : next === 'dark' ? '다크' : '라이트'));
+    const labels = {auto:'시스템', time:'시각 기반', light:'라이트', dark:'다크'};
+    toast('테마: ' + labels[next]);
   }
   document.getElementById('themeBtn').addEventListener('click', cycleTheme);
   document.getElementById('rowTheme').addEventListener('click', cycleTheme);
+  // v2.47.24: 시각 기반 모드 자동 적용 (18시~6시 다크, 그 외 라이트)
+  function _applyTimeMode() {
+    const stored = localStorage.getItem('theme');
+    if (stored !== 'time') return;
+    const h = new Date().getHours();
+    const mode = (h >= 18 || h < 6) ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', mode);
+    document.getElementById('themeLabel').textContent = '시각 기반 (' + (mode === 'dark' ? '🌙 다크' : '☀️ 라이트') + ')';
+  }
+  // applyTheme 확장 — time 모드 처리
+  const _origApplyTheme = applyTheme;
+  applyTheme = function(mode) {
+    if (mode === 'time') {
+      localStorage.setItem('theme', 'time');
+      _applyTimeMode();
+    } else {
+      _origApplyTheme(mode);
+    }
+  };
+  // 매 시간마다 자동 갱신 (time 모드일 때)
+  setInterval(_applyTimeMode, 5 * 60 * 1000);  // 5분마다 체크
   applyTheme(localStorage.getItem('theme') || 'auto');
 
   HAPTIC = localStorage.getItem('haptic') !== '0';
@@ -2873,6 +2897,35 @@ if ('serviceWorker' in navigator) {
       const size = (json.length / 1024 / 1024).toFixed(2);
       toast(`✓ 백업 다운로드 (${size}MB)`, 'success', 3500);
     } catch (e) { toast('백업 실패: ' + e.message, 'error'); }
+  });
+
+  // v2.47.24: 백업 복구 — 즐겨찾기/알림/검색 기록 등 localStorage 항목만
+  document.getElementById('rowRestore')?.addEventListener('click', () => {
+    haptic();
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'application/json,.json';
+    inp.onchange = async (e) => {
+      const f = e.target.files?.[0];
+      if (!f) return;
+      try {
+        const txt = await f.text();
+        const bk = JSON.parse(txt);
+        if (!bk.exportedAt) throw new Error('유효한 더필 백업이 아님');
+        let restored = 0;
+        if (bk.notifications && Array.isArray(bk.notifications)) {
+          _notifSave(bk.notifications);
+          restored++;
+        }
+        if (bk.favorites?.brand) {
+          localStorage.setItem('favBrands', bk.favorites.brand);
+          restored++;
+        }
+        _notifUpdateDot();
+        toast(`✓ ${restored}개 항목 복구됨 — 새로고침 후 적용`, 'success', 4500);
+        setTimeout(() => location.reload(), 2000);
+      } catch (er) { toast('복구 실패: ' + er.message, 'error'); }
+    };
+    inp.click();
   });
   document.getElementById('setOpenSite').addEventListener('click', () => {
     haptic(); window.open('https://smartstore.naver.com/stellastore', '_blank');
