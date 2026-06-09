@@ -117,7 +117,21 @@ if ('serviceWorker' in navigator) {
   }
   .app-head .theme-btn:active { transform:scale(0.92); }
 
-  .screen { animation:fade 260ms var(--ease); }
+  .screen { animation:fade 260ms var(--ease); will-change: opacity, transform; }
+  @keyframes fade { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
+  /* v2.47.72: 부드러운 전환 — will-change 통한 GPU 가속, transform/opacity만 */
+  .hero-card { will-change: transform; transition: background 0.3s ease; }
+  .insight { transition: transform 0.18s ease, box-shadow 0.18s ease; will-change: transform; }
+  .insight:active { transform: scale(0.98); }
+  .lrow { transition: background 0.15s ease; will-change: background; }
+  .srow { transition: background 0.15s ease; }
+  .tab-item { transition: color 0.15s ease, transform 0.15s ease; will-change: color; }
+  .tab-item:active { transform: scale(0.94); }
+  /* 입력 필드 focus 부드럽게 */
+  input, button { transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease; }
+  /* 토스트 / 모달 등 진입 더 부드럽게 (감속 곡선) */
+  .toast.show { animation: toastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes toastSlideIn { from { opacity:0; transform: translate(-50%, 20px); } to { opacity:1; transform: translate(-50%, 0); } }
   @keyframes fade { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
 
   .hero-card {
@@ -316,18 +330,47 @@ if ('serviceWorker' in navigator) {
 </style>
 </head>
 <body>
-  <!-- v2.47.1: 로그인 게이트 (AES-GCM 보호) — 라이트 톤 + 새 블루 로고 -->
-  <div id="authGate" style="position:fixed;inset:0;z-index:100;background:linear-gradient(165deg,#ffffff 0%,#eef2fb 60%,#dbe7ff 100%);display:flex;align-items:center;justify-content:center;padding:24px;font-family:'PretendardLocal',-apple-system,sans-serif;">
-    <div style="width:100%;max-width:340px;background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);border:1px solid rgba(27,100,218,0.10);border-radius:24px;padding:36px 28px;text-align:center;box-shadow:0 20px 60px rgba(27,100,218,0.10), 0 4px 12px rgba(0,0,0,0.04);">
-      <div style="width:72px;height:72px;margin:0 auto 18px;border-radius:18px;background:#ffffff;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 6px 20px rgba(27,100,218,0.20), inset 0 0 0 1px rgba(0,0,0,0.04);"><img src="icon.png" alt="더필코리아" style="width:100%;height:100%;object-fit:cover;border-radius:16px;"></div>
-      <div style="font-size:10px;letter-spacing:3px;color:#1b64da;text-transform:uppercase;font-weight:700;margin-bottom:6px;">THE FEEL KOREA</div>
-      <div style="font-size:18px;color:#1a1a22;font-weight:600;margin-bottom:24px;">운영 시스템 로그인</div>
-      <input id="authUser" type="text" placeholder="아이디 (예: thefeel01)" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" style="width:100%;padding:14px 16px;border:1px solid rgba(27,100,218,0.18);border-radius:12px;background:#ffffff;color:#1a1a22;font-family:inherit;font-size:15px;margin-bottom:10px;outline:none;">
-      <input id="authPass" type="password" inputmode="numeric" placeholder="비밀번호" autocomplete="current-password" style="width:100%;padding:14px 16px;border:1px solid rgba(27,100,218,0.18);border-radius:12px;background:#ffffff;color:#1a1a22;font-family:inherit;font-size:15px;margin-bottom:14px;outline:none;">
-      <label style="display:flex;align-items:center;justify-content:flex-start;gap:8px;font-size:12px;color:#5c6370;margin-bottom:16px;cursor:pointer;">
+  <!-- v2.47.72: 로그인 게이트 강화 (UX 우선 + 마지막 ID 기억 + 빠른 선택 + 4자리 자동 시도) -->
+  <div id="authGate" style="position:fixed;inset:0;z-index:100;background:linear-gradient(165deg,#ffffff 0%,#eef2fb 50%,#dbe7ff 100%);display:flex;align-items:center;justify-content:center;padding:24px;font-family:'PretendardLocal',-apple-system,sans-serif;animation:authFadeIn 0.4s ease;">
+    <div style="width:100%;max-width:360px;background:rgba(255,255,255,0.92);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(27,100,218,0.10);border-radius:28px;padding:34px 26px 26px;text-align:center;box-shadow:0 20px 60px rgba(27,100,218,0.12), 0 4px 14px rgba(0,0,0,0.04);">
+      <!-- 로고 + 펄스 -->
+      <div style="position:relative;width:84px;height:84px;margin:0 auto 14px;">
+        <div style="position:absolute;inset:-4px;border-radius:24px;background:radial-gradient(circle,rgba(27,100,218,0.25),transparent 70%);animation:authPulse 2.5s ease-in-out infinite;"></div>
+        <div style="position:relative;width:84px;height:84px;border-radius:22px;background:#ffffff;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 8px 24px rgba(27,100,218,0.22), inset 0 0 0 1px rgba(0,0,0,0.04);"><img src="icon.png" alt="더필코리아" style="width:100%;height:100%;object-fit:cover;border-radius:20px;"></div>
+      </div>
+      <div style="font-size:10px;letter-spacing:3px;color:#1b64da;text-transform:uppercase;font-weight:700;margin-bottom:4px;">THE FEEL KOREA</div>
+      <div style="font-size:17px;color:#1a1a22;font-weight:700;margin-bottom:20px;">운영 시스템 로그인</div>
+
+      <!-- 사용자 빠른 선택 chip 1~5 -->
+      <div id="authQuickChips" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:14px;">
+        <button type="button" data-user="thefeel01" class="auth-chip">01</button>
+        <button type="button" data-user="thefeel02" class="auth-chip">02</button>
+        <button type="button" data-user="thefeel03" class="auth-chip">03</button>
+        <button type="button" data-user="thefeel04" class="auth-chip">04</button>
+        <button type="button" data-user="thefeel05" class="auth-chip">05</button>
+      </div>
+      <style>
+        @keyframes authFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes authPulse { 0%, 100% { transform: scale(1); opacity: 0.45; } 50% { transform: scale(1.1); opacity: 0.75; } }
+        @keyframes authDotFill { from { width: 0; opacity: 0; } to { width: 14px; opacity: 1; } }
+        .auth-chip { padding:11px 0; font-size:14px; font-weight:700; font-family:inherit; background:#ffffff; color:#1b64da; border:1.5px solid rgba(27,100,218,0.20); border-radius:11px; cursor:pointer; transition: all 0.18s ease; }
+        .auth-chip:active { transform: scale(0.95); }
+        .auth-chip.active { background:linear-gradient(135deg,#1b64da,#1e40af); color:#fff; border-color:transparent; box-shadow:0 4px 12px rgba(27,100,218,0.30); }
+        #authUser { width:100%; padding:13px 16px; border:1px solid rgba(27,100,218,0.18); border-radius:12px; background:#ffffff; color:#1a1a22; font-family:inherit; font-size:14px; margin-bottom:10px; outline:none; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        #authUser:focus { border-color:#1b64da; box-shadow:0 0 0 3px rgba(27,100,218,0.12); }
+        #authPass { width:100%; padding:15px 16px; border:1px solid rgba(27,100,218,0.18); border-radius:12px; background:#ffffff; color:#1a1a22; font-family:'MonoLocal','-apple-system',monospace; font-size:18px; letter-spacing:6px; text-align:center; margin-bottom:14px; outline:none; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        #authPass:focus { border-color:#1b64da; box-shadow:0 0 0 3px rgba(27,100,218,0.12); }
+        #authBtn { width:100%; padding:14px; border:none; border-radius:12px; background:linear-gradient(135deg,#1b64da 0%,#1e40af 100%); color:#fff; font-family:inherit; font-size:15px; font-weight:700; cursor:pointer; box-shadow:0 4px 14px rgba(27,100,218,0.30); transition: transform 0.18s ease, box-shadow 0.18s ease; }
+        #authBtn:active { transform: scale(0.98); box-shadow:0 2px 8px rgba(27,100,218,0.20); }
+        #authBtn:disabled { opacity:0.55; cursor:wait; }
+      </style>
+
+      <input id="authUser" type="text" placeholder="아이디 (예: thefeel01)" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+      <input id="authPass" type="password" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="current-password">
+      <label style="display:flex;align-items:center;justify-content:flex-start;gap:8px;font-size:12px;color:#5c6370;margin-bottom:14px;cursor:pointer;user-select:none;">
         <input id="authRemember" type="checkbox" checked style="width:16px;height:16px;accent-color:#1b64da;">자동 로그인 (이 기기)
       </label>
-      <button id="authBtn" style="width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#1b64da 0%,#1e40af 100%);color:#ffffff;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(27,100,218,0.30);">로그인</button>
+      <button id="authBtn">로그인</button>
       <div id="authMsg" style="font-size:12px;color:#e74c3c;margin-top:12px;min-height:16px;"></div>
     </div>
   </div>
@@ -3880,6 +3923,38 @@ if ('serviceWorker' in navigator) {
   document.getElementById('authBtn').addEventListener('click', _handleLogin);
   document.getElementById('authPass').addEventListener('keydown', e => { if (e.key==='Enter') _handleLogin(); });
   document.getElementById('authUser').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('authPass').focus(); });
+
+  // v2.47.72: 로그인 UX 강화 — 마지막 사용자 기억 + 빠른 선택 chip + 4자리 자동 시도
+  const _userInp = document.getElementById('authUser');
+  const _passInp = document.getElementById('authPass');
+  const _chips = document.querySelectorAll('.auth-chip');
+  function _setActiveChip(user) {
+    _chips.forEach(c => c.classList.toggle('active', c.dataset.user === user));
+  }
+  // 마지막 사용 사용자 복원
+  try {
+    const lastUser = localStorage.getItem('lastAuthUser') || 'thefeel01';
+    _userInp.value = lastUser;
+    _setActiveChip(lastUser);
+  } catch {}
+  // chip 클릭 → 사용자 즉시 변경 + pass 포커스
+  _chips.forEach(chip => chip.addEventListener('click', () => {
+    const user = chip.dataset.user;
+    _userInp.value = user;
+    _setActiveChip(user);
+    if (typeof haptic === 'function') haptic();
+    _passInp.focus();
+  }));
+  // 사용자 input 변경 시 chip 동기화
+  _userInp.addEventListener('input', () => _setActiveChip(_userInp.value.trim()));
+  // 4자리 입력 시 자동 로그인 시도 (사용자가 누르지 않아도)
+  _passInp.addEventListener('input', () => {
+    if (_passInp.value.length === 4) {
+      try { localStorage.setItem('lastAuthUser', _userInp.value.trim()); } catch {}
+      setTimeout(() => _handleLogin(), 100);
+    }
+  });
+
   _tryAutoLogin();
 
   // v2.47.10: 알림 센터 종 — 클릭 시 모달 + 초기 dot 갱신
