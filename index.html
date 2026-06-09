@@ -671,6 +671,19 @@ if ('serviceWorker' in navigator) {
         <div id="marginChart" style="height:80px;position:relative;"></div>
       </div>
 
+      <!-- v2.47.46: 월간 정산 캘린더 -->
+      <div class="chart-card" id="calendarCard" style="padding:14px;margin-bottom:14px;" hidden>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="font-size:11px;color:var(--soft);font-weight:600;">📅 이번 달 일별 매출</div>
+          <span id="calendarMonth" style="font-size:11px;color:var(--text);font-family:'MonoLocal',monospace;font-weight:700;">—</span>
+        </div>
+        <div id="calendarGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;font-size:10px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:9px;color:var(--soft);">
+          <span style="display:flex;align-items:center;gap:5px;"><span style="width:9px;height:9px;background:rgba(245,158,11,0.20);border-radius:2px;"></span>저매출 ↔ 고매출<span style="width:9px;height:9px;background:#f59e0b;border-radius:2px;"></span></span>
+          <span>탭하여 상세</span>
+        </div>
+      </div>
+
       <div class="sec-head"><span class="sec-title">일별 매출명세 (최근 14일)</span><span class="sec-more" id="dsDailyStats">—</span></div>
       <div id="dsDailyList" style="display:flex; flex-direction:column; gap:6px;"></div>
 
@@ -2349,6 +2362,60 @@ if ('serviceWorker' in navigator) {
         list.innerHTML = '<div class="empty" style="padding:20px;color:var(--dim);font-size:12px;text-align:center;">일별 데이터 로드 중…</div>';
       }
     }
+    // v2.47.46: 월간 정산 캘린더 (이번 달 일별 매출 히트맵)
+    try {
+      const calCard = document.getElementById('calendarCard');
+      const calGrid = document.getElementById('calendarGrid');
+      const days = DAILY?.days || [];
+      if (calCard && calGrid && days.length > 0) {
+        const now = new Date();
+        const yy = now.getFullYear(), mo = now.getMonth();
+        const firstDay = new Date(yy, mo, 1);
+        const daysInMonth = new Date(yy, mo+1, 0).getDate();
+        const firstWeekday = firstDay.getDay();
+        const today_d = now.getDate();
+        // 이번 달 일별 매출 map
+        const ymPrefix = String(yy) + '-' + String(mo+1).padStart(2,'0') + '-';
+        const monthDays = {};
+        days.forEach(d => { if ((d.date||'').startsWith(ymPrefix)) monthDays[d.date.slice(8)] = d.sales || 0; });
+        const allSales = Object.values(monthDays).filter(v => v > 0);
+        if (allSales.length > 0) {
+          calCard.hidden = false;
+          const maxSales = Math.max(...allSales);
+          document.getElementById('calendarMonth').textContent = `${yy}.${String(mo+1).padStart(2,'0')} · ${Object.keys(monthDays).length}일 데이터`;
+          // 요일 헤더
+          const wkHeader = ['일','월','화','수','목','금','토'].map((w, i) =>
+            `<div style="text-align:center;padding:4px 0;font-weight:700;color:${i===0?'#dc2626':(i===6?'#1b64da':'var(--soft)')};">${w}</div>`
+          ).join('');
+          // 빈 셀 + 일자 셀
+          const emptyCells = Array(firstWeekday).fill('<div></div>').join('');
+          const dateCells = Array.from({length:daysInMonth}, (_, i) => {
+            const d = i + 1;
+            const sales = monthDays[String(d).padStart(2,'0')] || 0;
+            const intensity = maxSales > 0 ? sales / maxSales : 0;
+            const bg = sales > 0 ? `rgba(245,158,11,${0.18 + intensity * 0.6})` : 'rgba(255,255,255,0.04)';
+            const isToday = d === today_d;
+            const todayBorder = isToday ? 'box-shadow:0 0 0 1.5px #1b64da;' : '';
+            return `<div class="cal-day" data-d="${d}" data-sales="${sales}" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:${bg};border-radius:5px;color:${sales > 0 ? 'var(--text)' : 'var(--soft)'};font-weight:${isToday?'800':'600'};${todayBorder}cursor:pointer;font-size:11px;">${d}</div>`;
+          }).join('');
+          calGrid.innerHTML = wkHeader + emptyCells + dateCells;
+          // 클릭 → 그 날 상세 토스트
+          calGrid.querySelectorAll('.cal-day').forEach(cell => cell.addEventListener('click', () => {
+            const d = +cell.dataset.d;
+            const sales = +(cell.dataset.sales||0);
+            if (sales === 0) { toast(`${mo+1}월 ${d}일: 데이터 없음`, 'info', 2000); return; }
+            haptic();
+            const avg = allSales.reduce((s,v) => s+v, 0) / allSales.length;
+            const vs = ((sales - avg) / avg * 100);
+            const trend = vs >= 0 ? `▲ ${vs.toFixed(0)}%` : `▼ ${Math.abs(vs).toFixed(0)}%`;
+            toast(`📅 ${mo+1}월 ${d}일 · ${fmtK(sales)} · 일평균 ${trend}`, 'info', 4500);
+          }));
+        } else {
+          calCard.hidden = true;
+        }
+      }
+    } catch (e) { console.warn('calendar fail:', e.message); }
+
     // v2.47.11: 월별 마진율 라인 차트
     try {
       const months = (D.months26 || []).filter(m => m.cost > 0);
