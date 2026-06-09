@@ -2185,7 +2185,7 @@ if ('serviceWorker' in navigator) {
     const amt = document.getElementById('dsHeroAmount2');
     if (!amt) return;
 
-    // v2.47.40: hero delta에 오늘 vs 일평균 비교
+    // v2.47.40: hero delta에 오늘 vs 일평균 비교 + v2.47.43: 큰 차이 자동 알림
     try {
       const today = NAVER_RT?.today?.totalAmount || 0;
       const days = DAILY?.days || [];
@@ -2198,6 +2198,16 @@ if ('serviceWorker' in navigator) {
         if (delta2) {
           const existing = delta2.textContent;
           delta2.innerHTML = `${existing} <span style="color:${diffPct >= 0 ? '#02a647' : '#dc2626'};font-weight:700;margin-left:6px;">${emoji} 오늘 ${trend} vs 일평균</span>`;
+        }
+        // v2.47.43: 일평균 대비 50%+ 변화 — 자동 알림 (하루 1회)
+        const today_key = new Date().toISOString().slice(0,10);
+        const alertKey = 'salesAlert:' + today_key;
+        if (Math.abs(diffPct) >= 50 && !localStorage.getItem(alertKey)) {
+          if (typeof notifPush === 'function') {
+            const label = diffPct >= 0 ? '🎉 매출 폭증' : '⚠️ 매출 저조';
+            notifPush('info', `${label} ${trend}`, `오늘 ${fmtK(today)} · 일평균 ${fmtK(avgDaily)} 대비`);
+          }
+          localStorage.setItem(alertKey, '1');
         }
       }
     } catch {}
