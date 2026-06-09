@@ -1381,6 +1381,22 @@ if ('serviceWorker' in navigator) {
       const m = c.profit/c.sales*100;
       arr.push({k: m<5?'warn':'down', l:'수익성 주의 채널', t:c.name, d:`이익 ${m.toFixed(1)}% · ${fmtN(c.qty)}건`});
     }
+    // v2.47.33: 7) 떠오르는 모델 (재고 충분 + 잘 팔림)
+    if (INV?.models) {
+      const trending = INV.models.filter(m => m.sellPct >= 60 && m.sellPct < 85 && m.stockTotal >= 10).sort((a,b) => b.stockValue - a.stockValue);
+      if (trending[0]) {
+        const m = trending[0];
+        arr.push({k:'up', l:'🔥 떠오르는 모델', t:`${m.brand} ${m.model}`, d:`소진 ${m.sellPct.toFixed(0)}% · 재고 ${m.stockTotal}개`});
+      }
+    }
+    // v2.47.33: 8) 재발주 위험 — 가장 시급한 모델
+    if (INV?.models) {
+      const reorder = INV.models.filter(m => m.sellPct >= 70 && m.stockTotal > 0 && m.stockTotal <= 5).sort((a,b) => b.sellPct - a.sellPct);
+      if (reorder[0]) {
+        const m = reorder[0];
+        arr.push({k:'warn', l:'🚨 재발주 시급', t:`${m.brand} ${m.model}`, d:`재고 ${m.stockTotal}개 · 소진 ${m.sellPct.toFixed(0)}%`});
+      }
+    }
     return arr;
   }
 
