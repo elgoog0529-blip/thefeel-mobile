@@ -2418,7 +2418,24 @@ if ('serviceWorker' in navigator) {
             const avg = allSales.reduce((s,v) => s+v, 0) / allSales.length;
             const vs = ((sales - avg) / avg * 100);
             const trend = vs >= 0 ? `▲ ${vs.toFixed(0)}%` : `▼ ${Math.abs(vs).toFixed(0)}%`;
-            toast(`📅 ${mo+1}월 ${d}일 · ${fmtK(sales)} · 일평균 ${trend}`, 'info', 4500);
+            // v2.47.51: 같은 요일 평균 비교
+            const wd = new Date(yy, mo, d).getDay();
+            const wdNames = ['일','월','화','수','목','금','토'];
+            const sameWdSales = [];
+            for (let i = 1; i <= daysInMonth; i++) {
+              if (new Date(yy, mo, i).getDay() === wd) {
+                const s = monthDays[String(i).padStart(2,'0')] || 0;
+                if (s > 0 && i !== d) sameWdSales.push(s);
+              }
+            }
+            let wdCompare = '';
+            if (sameWdSales.length > 0) {
+              const wdAvg = sameWdSales.reduce((s,v) => s+v, 0) / sameWdSales.length;
+              const wdVs = ((sales - wdAvg) / wdAvg * 100);
+              const wdTrend = wdVs >= 0 ? `▲ ${wdVs.toFixed(0)}%` : `▼ ${Math.abs(wdVs).toFixed(0)}%`;
+              wdCompare = ` · ${wdNames[wd]}요일 평균 ${wdTrend}`;
+            }
+            toast(`📅 ${mo+1}월 ${d}일 (${wdNames[wd]}) · ${fmtK(sales)} · 월평균 ${trend}${wdCompare}`, 'info', 5500);
           }));
         } else {
           calCard.hidden = true;
