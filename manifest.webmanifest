@@ -1,7 +1,7 @@
 {
-  "name": "더필코리아",
-  "short_name": "더필코리아",
-  "description": "더필코리아 통합 운영 시스템 — 모바일",
+  "name": "더필코리아 운영시스템",
+  "short_name": "더필",
+  "description": "더필코리아 통합 운영 시스템 — 실시간 매출 / 재고 / 마켓 통합",
   "start_url": "./",
   "scope": "./",
   "id": "/",
@@ -9,8 +9,26 @@
   "orientation": "portrait",
   "background_color": "#eef2fb",
   "theme_color": "#1b64da",
+  "lang": "ko-KR",
+  "categories": ["business", "productivity", "finance"],
   "icons": [
     { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "icon-512.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "매출명세서",
+      "short_name": "정산",
+      "description": "월간 매출명세서 보기",
+      "url": "./?screen=breakeven",
+      "icons": [{"src": "icon.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "재고",
+      "short_name": "재고",
+      "description": "재고 현황 조회",
+      "url": "./?screen=inventory",
+      "icons": [{"src": "icon.png", "sizes": "192x192"}]
+    }
   ]
 }
