@@ -1978,16 +1978,19 @@ if ('serviceWorker' in navigator) {
     setH('mLpList', top10.map((r, i) => {
       const pct = r.priceDiffPct || 0;
       const stellaMark = r.stellaIsLowest ? '<span style="color:#d97706;font-weight:700;"> ⭐</span>' : '';
-      return `<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+      const sellerLink = r.marketLowLink ? `<a href="${r.marketLowLink}" target="_blank" style="color:#1a73e8;text-decoration:none;font-size:9.5px;">${(r.marketLowSeller||'').slice(0,10)} →</a>` : `<span style="font-size:9.5px;color:var(--soft);">${(r.marketLowSeller||'').slice(0,10)}</span>`;
+      const ourLink = r.storeUrl ? `<a href="${r.storeUrl}" target="_blank" style="color:#02a647;text-decoration:none;font-size:9px;">우리 스토어 →</a>` : '';
+      return `<div style="padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
         <div style="display:flex;align-items:center;gap:5px;font-size:10.5px;">
-          <span style="color:var(--soft);min-width:20px;">${i+1}.</span>
+          <span style="color:var(--soft);min-width:18px;font-weight:700;">${i+1}.</span>
           <span style="flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.brand||'—'} ${(r.modelCode||'').slice(0,18)}</span>
           <span style="color:#dc2626;font-weight:700;font-family:'MonoLocal',monospace;">+${pct}%</span>
         </div>
         <div style="display:flex;justify-content:space-between;margin-top:2px;font-size:9.5px;color:var(--soft);font-family:'MonoLocal',monospace;">
           <span>우리 ${fmtK(r.mobileDiscountedPrice)} → 시장 ${fmtK(r.marketLow)}${stellaMark}</span>
-          <span>${(r.marketLowSeller||'').slice(0,12)}</span>
+          ${sellerLink}
         </div>
+        ${r.suggestedPrice ? `<div style="margin-top:3px;font-size:9.5px;color:#1a73e8;font-family:'MonoLocal',monospace;">💡 제안가 ${fmtK(r.suggestedPrice)}${r.suggestedMargin?` (이익률 ${r.suggestedMargin}%)`:''} ${ourLink}</div>` : ''}
       </div>`;
     }).join(''));
     // 자동 알림 + 펄스
