@@ -1140,21 +1140,46 @@ if ('serviceWorker' in navigator) {
     '에이블리':'a-bly.com', '카카오':'kakao.com', '라쿠텐':'rakuten.com',
     '바이마':'buyma.com',
   };
-  // v2.47.77: 다중 로고 서비스 fallback chain — 브랜드별 진짜 로고 거의 100% 확보
-  // 우선순위: 1) 사용자 업로드 → 2) Clearbit → 3) DuckDuckGo Icons → 4) Google Favicon → 5) 약자
+  // v2.47.140: 공식 로고 — Wikipedia Commons (진짜 브랜드 로고, 영구 호스팅)
+  const BRAND_LOGOS_OFFICIAL = {
+    '버버리': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Logo_Burberry_01.svg/250px-Logo_Burberry_01.svg.png',
+    '구찌': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Gucci_logo.png/330px-Gucci_logo.png',
+    '보테가베네타': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Logo_of_Bottega_Veneta.svg/250px-Logo_of_Bottega_Veneta.svg.png',
+    '지방시': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Givenchy_-_wordmark_%28France%2C_2003%29.svg/330px-Givenchy_-_wordmark_%28France%2C_2003%29.svg.png',
+    '메종마르지엘라': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Maison_Margiela_logo.svg/250px-Maison_Margiela_logo.svg.png',
+    '펜디': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Fendi_logo.svg/250px-Fendi_logo.svg.png',
+    '프라다': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Prada-Logo.svg/250px-Prada-Logo.svg.png',
+    '발렌시아가': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Balenciaga2017Logo.svg/250px-Balenciaga2017Logo.svg.png',
+    '디올': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Dior_Logo_2022.svg/250px-Dior_Logo_2022.svg.png',
+    '크리스찬디올': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Dior_Logo_2022.svg/250px-Dior_Logo_2022.svg.png',
+    '셀린': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Celine_logo.svg/250px-Celine_logo.svg.png',
+    '셀린느': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Celine_logo.svg/250px-Celine_logo.svg.png',
+    '미우미우': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Miu_Miu_-_logo_%28Italy%2C_1993%29.svg/250px-Miu_Miu_-_logo_%28Italy%2C_1993%29.svg.png',
+    '생로랑': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Saint_Laurent_logo.svg/250px-Saint_Laurent_logo.svg.png',
+    '입생로랑': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Saint_Laurent_logo.svg/250px-Saint_Laurent_logo.svg.png',
+    '발렌티노': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Valentino_logo.svg/250px-Valentino_logo.svg.png',
+    '루이비통': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Louis_Vuitton_logo.svg/250px-Louis_Vuitton_logo.svg.png',
+    '샤넬': 'https://upload.wikimedia.org/wikipedia/en/thumb/9/92/Chanel_logo_interlocking_cs.svg/250px-Chanel_logo_interlocking_cs.svg.png',
+  };
+
+  // v2.47.77/140: 다중 로고 서비스 fallback chain
+  // 우선순위: 1) 사용자 업로드 → 2) Wikipedia 공식 → 3) Clearbit → 4) DuckDuckGo → 5) Google Favicon → 6) 약자
   function _userLogo(name) {
     try { const m = JSON.parse(localStorage.getItem('userBrandLogos') || '{}'); return m[name] || null; }
     catch { return null; }
   }
   function logoUrl(name, size = 128) {
+    if (BRAND_LOGOS_OFFICIAL[name]) return BRAND_LOGOS_OFFICIAL[name];
     const domain = BRAND_DOMAINS[name];
     if (!domain) return null;
     return `https://logo.clearbit.com/${domain}?size=${size}`;
   }
   function logoUrlsFallback(name, size = 128) {
     const urls = [];
-    const userUrl = _userLogo(name);  // data URL 또는 외부 URL
+    const userUrl = _userLogo(name);
     if (userUrl) urls.push(userUrl);
+    // v2.47.140: Wikipedia 공식 로고 최우선
+    if (BRAND_LOGOS_OFFICIAL[name]) urls.push(BRAND_LOGOS_OFFICIAL[name]);
     const domain = BRAND_DOMAINS[name];
     if (domain) {
       urls.push(`https://logo.clearbit.com/${domain}?size=${size}`);
