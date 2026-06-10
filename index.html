@@ -670,6 +670,10 @@ if ('serviceWorker' in navigator) {
       <div class="sec-head"><span class="sec-title">최근 거래 (Top 5)</span><span class="sec-more">정산+MD 통합</span></div>
       <div class="list" id="dashRecent15"></div>
 
+      <style>
+        @keyframes mLpPulse { 0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.40)} 50%{box-shadow:0 0 0 10px rgba(220,38,38,0)} }
+        #mLpCard.urgent { animation: mLpPulse 2.5s ease-out infinite; border-color:rgba(220,38,38,0.50)!important; }
+      </style>
       <!-- v2.47.112: 최저가조사 요약 (read-only) -->
       <div id="mLpCard" style="background:linear-gradient(135deg,rgba(220,38,38,0.10),rgba(245,158,11,0.04));border:1px solid rgba(220,38,38,0.25);border-radius:14px;padding:14px;margin-top:14px;display:none;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
@@ -1963,6 +1967,16 @@ if ('serviceWorker' in navigator) {
         </div>
       </div>`;
     }).join(''));
+    // 자동 알림 + 펄스
+    const urgentCount = (LP_DATA.results || []).filter(r =>
+      r.verdict === 'higher' &&
+      (r.priceDiffPct || 0) >= 30 &&
+      (r.profitMargin || 0) >= 10 &&
+      !r.stellaIsLowest
+    ).length;
+    if (urgentCount >= 3) card.classList.add('urgent');
+    else card.classList.remove('urgent');
+    setTimeout(alertUrgentLp, 2000);
   }
 
   // 펼치기/접기 토글
