@@ -490,6 +490,10 @@ if ('serviceWorker' in navigator) {
           </div>
           <button id="nyrToggle" style="padding:5px 9px;border:1px solid rgba(26,115,232,0.30);border-radius:7px;background:rgba(26,115,232,0.08);color:#1a73e8;font-size:10.5px;font-weight:600;cursor:pointer;">▼ 펼치기</button>
         </div>
+        <!-- v2.47.115: 오늘 vs 어제 -->
+        <div style="margin-bottom:8px;padding:7px 10px;background:rgba(255,255,255,0.05);border-radius:7px;">
+          <div id="nyrTodayCompare" style="font-size:11px;color:var(--text);font-family:'MonoLocal',monospace;">—</div>
+        </div>
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;">
           <div style="padding:9px;background:rgba(255,255,255,0.06);border-radius:9px;">
             <div style="font-size:9.5px;color:var(--soft);">총 매출</div>
@@ -1715,6 +1719,25 @@ if ('serviceWorker' in navigator) {
     const d = NAVER_YEARLY;
     const setT = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     const setH = (id, v) => { const el = document.getElementById(id); if (el) el.innerHTML = v; };
+
+    // v2.47.115: 오늘/페이스 비교 (모바일)
+    const todayStr = new Date().toISOString().slice(0,10);
+    const yestStr = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+    const todayE = (d.daily || []).find(x => x.date === todayStr);
+    const yestE = (d.daily || []).find(x => x.date === yestStr);
+    const compEl = document.getElementById('nyrTodayCompare');
+    if (compEl) {
+      if (todayE?.amount > 0 && yestE?.amount > 0) {
+        const pct = ((todayE.amount - yestE.amount) / yestE.amount * 100);
+        const arrow = pct > 0 ? '↑' : pct < 0 ? '↓' : '→';
+        const color = pct > 0 ? '#02a647' : pct < 0 ? '#fa5252' : 'var(--soft)';
+        compEl.innerHTML = `오늘 <b style="color:#1a73e8;">${fmtK(todayE.amount)}</b> · <span style="color:${color};font-weight:700;">${arrow}${Math.abs(pct).toFixed(1)}%</span>`;
+      } else if (todayE?.amount > 0) {
+        compEl.innerHTML = `오늘 <b style="color:#1a73e8;">${fmtK(todayE.amount)}</b>`;
+      } else {
+        compEl.textContent = '오늘 결제 없음';
+      }
+    }
 
     setT('nyrTotal', fmtK(d.totalAmount || 0));
     setT('nyrCount', (d.totalCount || 0).toLocaleString() + '건');
