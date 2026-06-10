@@ -1140,7 +1140,7 @@ if ('serviceWorker' in navigator) {
     '에이블리':'a-bly.com', '카카오':'kakao.com', '라쿠텐':'rakuten.com',
     '바이마':'buyma.com',
   };
-  // v2.47.140: 공식 로고 — Wikipedia Commons (진짜 브랜드 로고, 영구 호스팅)
+  // v2.47.140/141: 공식 로고 — Wikipedia Commons (진짜 브랜드 로고, 영구 호스팅)
   const BRAND_LOGOS_OFFICIAL = {
     '버버리': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Logo_Burberry_01.svg/250px-Logo_Burberry_01.svg.png',
     '구찌': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Gucci_logo.png/330px-Gucci_logo.png',
@@ -1160,7 +1160,24 @@ if ('serviceWorker' in navigator) {
     '발렌티노': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Valentino_logo.svg/250px-Valentino_logo.svg.png',
     '루이비통': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Louis_Vuitton_logo.svg/250px-Louis_Vuitton_logo.svg.png',
     '샤넬': 'https://upload.wikimedia.org/wikipedia/en/thumb/9/92/Chanel_logo_interlocking_cs.svg/250px-Chanel_logo_interlocking_cs.svg.png',
+    // v2.47.141: 추가 14개
+    '몽블랑': 'https://upload.wikimedia.org/wikipedia/en/thumb/2/2c/Montblanc_Logo.svg/250px-Montblanc_Logo.svg.png',
+    '마르니': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Marni.png/250px-Marni.png',
+    '에르메스': 'https://upload.wikimedia.org/wikipedia/en/thumb/e/e4/Herm%C3%A8s.svg/250px-Herm%C3%A8s.svg.png',
+    '아크네스튜디오': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Acne_studios_logo%2C_2021.svg/250px-Acne_studios_logo%2C_2021.svg.png',
+    '아크네': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Acne_studios_logo%2C_2021.svg/250px-Acne_studios_logo%2C_2021.svg.png',
+    '스톤아일랜드': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Stone-Island-Logo.svg/250px-Stone-Island-Logo.svg.png',
+    '질샌더': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Jil_Sander_logo.svg/250px-Jil_Sander_logo.svg.png',
+    '베르사체': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Versace_old_logo.svg/250px-Versace_old_logo.svg.png',
+    '돌체앤가바나': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Dolce_%26_Gabbana_-_logo_%28Italy%2C_1985-%29.svg/250px-Dolce_%26_Gabbana_-_logo_%28Italy%2C_1985-%29.svg.png',
+    '가니': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/GANNI_Logo.jpg/250px-GANNI_Logo.jpg',
+    '오프화이트': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Off-White_Logo.svg/250px-Off-White_Logo.svg.png',
+    '메종키츠네': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Maison_Kitsune_logo.svg/250px-Maison_Kitsune_logo.svg.png',
+    '폴로': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Ralph_Lauren_logo.svg/250px-Ralph_Lauren_logo.svg.png',
+    '랄프로렌': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Ralph_Lauren_logo.svg/250px-Ralph_Lauren_logo.svg.png',
+    '아미': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Ami_Paris.jpg/250px-Ami_Paris.jpg',
   };
+  // 우영미, 자크뮤스, 골든구스, APC, 로에베, 톰브라운, 셀프포트레이트 등: Wikipedia에 공식 로고 없음 → Clearbit fallback (logo.clearbit.com/domain)
 
   // v2.47.77/140: 다중 로고 서비스 fallback chain
   // 우선순위: 1) 사용자 업로드 → 2) Wikipedia 공식 → 3) Clearbit → 4) DuckDuckGo → 5) Google Favicon → 6) 약자
