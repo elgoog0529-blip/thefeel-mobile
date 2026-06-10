@@ -520,9 +520,16 @@ if ('serviceWorker' in navigator) {
         </div>
         <!-- 펼침: 월별 상세 + 최근 주문 30건 -->
         <div id="nyrExpanded" style="display:none;margin-top:10px;">
-          <div style="font-size:10px;color:var(--soft);margin-bottom:5px;">월별 상세</div>
+          <!-- v2.47.103: 주문 상태 분포 -->
+          <div style="font-size:10px;color:var(--soft);margin-bottom:5px;">🎯 주문 상태 (순매출: <span id="nyrNetRev" style="color:#02a647;font-weight:700;font-family:'MonoLocal',monospace;">—</span>)</div>
+          <div id="nyrStatus" style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;font-size:10.5px;margin-bottom:10px;"></div>
+          <!-- 브랜드 Top 10 -->
+          <div style="font-size:10px;color:var(--soft);margin-bottom:5px;">🏷️ Top 10 브랜드</div>
+          <div id="nyrBrands" style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;font-size:10.5px;margin-bottom:10px;"></div>
+          <!-- 월별 상세 -->
+          <div style="font-size:10px;color:var(--soft);margin-bottom:5px;">📅 월별 상세</div>
           <div id="nyrMonthlyTable" style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;font-size:11px;"></div>
-          <div style="font-size:10px;color:var(--soft);margin-top:10px;margin-bottom:5px;">최근 주문 (최대 200건)</div>
+          <div style="font-size:10px;color:var(--soft);margin-top:10px;margin-bottom:5px;">🧾 최근 주문 (최대 200건)</div>
           <div id="nyrOrders" style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;font-size:10.5px;max-height:420px;overflow-y:auto;"></div>
         </div>
       </div>
@@ -1669,6 +1676,48 @@ if ('serviceWorker' in navigator) {
       const isCurrent = (i+1) === nowMonth && year === new Date().getFullYear();
       const color = x.amount > 0 ? (isCurrent ? '#9333ea' : '#1a73e8') : 'rgba(255,255,255,0.10)';
       return `<div title="${x.ym}: ${fmtK(x.amount)} (${x.count}건)" style="height:${h}px;background:${color};border-radius:3px 3px 0 0;cursor:pointer;"></div>`;
+    }).join(''));
+
+    // v2.47.103: 주문 상태 분포 + 순매출
+    const statusMeta = {
+      'PURCHASE_DECIDED':{l:'구매확정',c:'#02a647'},'DELIVERED':{l:'배송완료',c:'#1a73e8'},
+      'DELIVERING':{l:'배송중',c:'#0bb'},'DISPATCHED':{l:'발송완료',c:'#1a73e8'},
+      'PAYED':{l:'결제완료',c:'#03c75a'},'CANCELED':{l:'취소',c:'#fa5252'},
+      'RETURNED':{l:'반품',c:'#f59e0b'},'EXCHANGED':{l:'교환',c:'#9333ea'},
+      'PAYMENT_WAITING':{l:'결제대기',c:'#94a3b8'},
+    };
+    const statusSum = d.statusSummary || [];
+    const totalStCnt = statusSum.reduce((s,v) => s + v.count, 0);
+    setT('nyrNetRev', fmtK(d.netRevenue || 0));
+    setH('nyrStatus', statusSum.map(v => {
+      const meta = statusMeta[v.status] || {l:v.status, c:'#888'};
+      const pct = totalStCnt > 0 ? (v.count / totalStCnt * 100) : 0;
+      return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;">
+        <span style="min-width:60px;font-size:10px;font-weight:600;color:${meta.c};">${meta.l}</span>
+        <div style="flex:1;height:11px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;position:relative;">
+          <div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${meta.c};opacity:0.8;"></div>
+          <span style="position:absolute;left:4px;top:50%;transform:translateY(-50%);font-size:9px;font-weight:700;color:#fff;text-shadow:0 0 2px rgba(0,0,0,0.5);">${pct.toFixed(1)}%</span>
+        </div>
+        <span style="min-width:50px;text-align:right;font-size:10px;font-family:'MonoLocal',monospace;color:var(--soft);">${v.count}</span>
+        <span style="min-width:60px;text-align:right;font-size:10px;font-family:'MonoLocal',monospace;font-weight:600;">${fmtK(v.amount)}</span>
+      </div>`;
+    }).join(''));
+
+    // 브랜드 Top 10
+    const brandSum = (d.brandSummary || []).filter(b => b.brand !== '기타');
+    const totalBr = brandSum.reduce((s,v) => s + v.amount, 0);
+    setH('nyrBrands', brandSum.slice(0, 10).map((v, i) => {
+      const pct = totalBr > 0 ? (v.amount / totalBr * 100) : 0;
+      const medal = ['🥇','🥈','🥉'][i] || `${i+1}.`;
+      return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;">
+        <span style="min-width:20px;font-size:10px;font-weight:700;">${medal}</span>
+        <span style="min-width:70px;font-size:10.5px;font-weight:600;">${v.brand}</span>
+        <div style="flex:1;height:5px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;">
+          <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#1a73e8,#9333ea);"></div>
+        </div>
+        <span style="min-width:60px;text-align:right;font-size:10px;font-family:'MonoLocal',monospace;font-weight:700;">${fmtK(v.amount)}</span>
+        <span style="min-width:30px;text-align:right;font-size:9.5px;color:var(--soft);">${v.count}건</span>
+      </div>`;
     }).join(''));
 
     // 월별 상세 (테이블 형태로)
