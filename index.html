@@ -2399,7 +2399,7 @@ if ('serviceWorker' in navigator) {
     document.getElementById('dashBrandTop').innerHTML = bTop.map(b => {
       const m = b.sales > 0 ? (b.profit/b.sales*100) : 0;
       const roi = b.cost > 0 ? (b.profit/b.cost*100) : 0;
-      const ab = logoFor(b.name);
+      const ab = logoSmallImg(b.name);
       return `<div class="lrow" data-brand="${b.name}"><div class="lic" style="${brandStyle(b.name)}">${ab}</div><div class="lmain"><div class="lnm">${b.name}</div><div class="lsub">${fmtN(b.qty)}건 · 이익 ${fmtK(b.profit)} · 이익률 ${roi.toFixed(1)}%</div><div class="lbar"><i style="width:${b.sales/bMax*100}%"></i></div></div><div class="lval"><div class="lamt">${fmtK(b.sales)}</div><div class="lpct ${m>=0?'up':'down'}">이익 ${m.toFixed(1)}%</div></div></div>`;
     }).join('');
     document.querySelectorAll('#dashBrandTop .lrow').forEach(row => row.addEventListener('click', () => {
@@ -2696,7 +2696,7 @@ if ('serviceWorker' in navigator) {
         crossHtml = `<div class="sec-head" style="margin-top:14px;"><span class="sec-title">주요 채널 TOP ${chs.length}</span></div><div class="list">${chs.map(c => `<div class="lrow"><div class="lic">${(c.name||'?').slice(0,2)}</div><div class="lmain"><div class="lnm">${c.name}</div><div class="lsub">${fmtN(c.qty)}건 · 정산 ${fmtK(c.settle)}</div></div><div class="lval"><div class="lamt">${fmtK(c.sales)}</div></div></div>`).join('')}</div>`;
       } else if (SET_TAB === 'channel' && D.channelBrands && D.channelBrands[it.key]) {
         const bs = D.channelBrands[it.key];
-        crossHtml = `<div class="sec-head" style="margin-top:14px;"><span class="sec-title">주요 브랜드 TOP ${bs.length}</span></div><div class="list">${bs.map(b => `<div class="lrow"><div class="lic" style="${brandStyle(b.name)}">${logoFor(b.name)}</div><div class="lmain"><div class="lnm">${b.name}</div><div class="lsub">${fmtN(b.qty)}건 · 정산 ${fmtK(b.settle)}</div></div><div class="lval"><div class="lamt">${fmtK(b.sales)}</div></div></div>`).join('')}</div>`;
+        crossHtml = `<div class="sec-head" style="margin-top:14px;"><span class="sec-title">주요 브랜드 TOP ${bs.length}</span></div><div class="list">${bs.map(b => `<div class="lrow"><div class="lic" style="${brandStyle(b.name)}">${logoSmallImg(b.name)}</div><div class="lmain"><div class="lnm">${b.name}</div><div class="lsub">${fmtN(b.qty)}건 · 정산 ${fmtK(b.settle)}</div></div><div class="lval"><div class="lamt">${fmtK(b.sales)}</div></div></div>`).join('')}</div>`;
       }
       // v2.47.56/58: 채널이면 정산 주기 + 다음 입금일 계산
       const settleLabel = !it.isBrand && SET_TAB === 'channel' ? _channelSettleLabel(it.key) : null;
@@ -2775,7 +2775,7 @@ if ('serviceWorker' in navigator) {
     const bs = (D.channelBrands && D.channelBrands[c.name]) || [];
     const bsHtml = bs.length ? `
       <div class="sec-head" style="margin-top:14px;"><span class="sec-title">주요 브랜드 TOP ${bs.length}</span></div>
-      <div class="list">${bs.map(b => `<div class="lrow"><div class="lic" style="${brandStyle(b.name)}">${logoFor(b.name)}</div><div class="lmain"><div class="lnm">${b.name}</div><div class="lsub">${fmtN(b.qty)}건</div></div><div class="lval"><div class="lamt">${fmtK(b.sales)}</div></div></div>`).join('')}</div>` : '';
+      <div class="list">${bs.map(b => `<div class="lrow"><div class="lic" style="${brandStyle(b.name)}">${logoSmallImg(b.name)}</div><div class="lmain"><div class="lnm">${b.name}</div><div class="lsub">${fmtN(b.qty)}건</div></div><div class="lval"><div class="lamt">${fmtK(b.sales)}</div></div></div>`).join('')}</div>` : '';
     openModal(c.name, `
       <div class="be-card"><div class="be-top"><div class="be-name">매출</div><div class="be-diff up">${fmtK(c.sales)}</div></div></div>
       <div class="be-card"><div class="be-top"><div class="be-name">정산 (VAT 별도)</div><div class="be-diff">${fmtK(c.settle)}</div></div><div class="be-foot"><span>채널 수수료율 (추정)</span><b>${feeRate_c.toFixed(1)}%</b></div></div>
@@ -2821,7 +2821,7 @@ if ('serviceWorker' in navigator) {
       document.getElementById('invBrandCount').textContent = `${fmtN(items.length)} / ${fmtN(INV.models.length)} 모델`;
       if (!items.length) { list.innerHTML='<div class="empty">결과 없음</div>'; return; }
       list.innerHTML = show.map((m, i) => {
-        const ab = logoFor(m.brand);
+        const ab = logoSmallImg(m.brand);
         // v2.47.4: 데드스톡 / 베스트셀러 chip
         let stockBadge;
         if (m.stockTotal === 0) stockBadge = '<span class="lpct down">품절</span>';
@@ -3032,7 +3032,7 @@ if ('serviceWorker' in navigator) {
     if (!items.length) { list.innerHTML = '<div class="empty">검색 결과 없음</div>'; return; }
     const max = Math.max(1, ...items.map(b => b.stockValue));
     list.innerHTML = items.map((b, i) => {
-      const ab = logoFor(b.brand);
+      const ab = logoSmallImg(b.brand);
       const pct = Math.round(b.stockValue/max*100);
       const sellThru = b.initialValue > 0 ? (b.soldValue/b.initialValue*100) : 0;
       const star = `<span class="star ${isFav(b.brand)?'on':''}" data-fav="${b.brand}">${isFav(b.brand)?'★':'☆'}</span>`;
@@ -3600,7 +3600,7 @@ if ('serviceWorker' in navigator) {
     const brHtml = (MD.brands26||D.brands||[]).slice(0,10).map(b => {
       const max = MD.brands[0].sales;
       const pct = max>0?b.sales/max*100:0;
-      return `<div class="lrow"><div class="lic" style="${brandStyle(b.name)}">${logoFor(b.name)}</div><div class="lmain"><div class="lnm">${b.name}</div><div class="lsub">${fmtN(b.qty)}건</div><div class="lbar"><i style="width:${pct}%"></i></div></div><div class="lval"><div class="lamt">${fmtK(b.sales)}</div></div></div>`;
+      return `<div class="lrow"><div class="lic" style="${brandStyle(b.name)}">${logoSmallImg(b.name)}</div><div class="lmain"><div class="lnm">${b.name}</div><div class="lsub">${fmtN(b.qty)}건</div><div class="lbar"><i style="width:${pct}%"></i></div></div><div class="lval"><div class="lamt">${fmtK(b.sales)}</div></div></div>`;
     }).join('');
     const chHtml = (MD.channels26||D.channels||[]).slice(0,10).map(c => {
       const max = MD.channels[0].sales;
