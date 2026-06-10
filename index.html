@@ -362,7 +362,7 @@ if ('serviceWorker' in navigator) {
       <!-- 로고 + 펄스 -->
       <div style="position:relative;width:84px;height:84px;margin:0 auto 14px;">
         <div style="position:absolute;inset:-4px;border-radius:24px;background:radial-gradient(circle,rgba(27,100,218,0.25),transparent 70%);animation:authPulse 2.5s ease-in-out infinite;"></div>
-        <div style="position:relative;width:84px;height:84px;border-radius:22px;background:#ffffff;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 8px 24px rgba(27,100,218,0.22), inset 0 0 0 1px rgba(0,0,0,0.04);"><img src="icon.png" alt="더필코리아" style="width:100%;height:100%;object-fit:cover;border-radius:20px;"></div>
+        <div style="position:relative;width:84px;height:84px;border-radius:22px;background:#ffffff;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 8px 24px rgba(27,100,218,0.22), inset 0 0 0 1px rgba(0,0,0,0.04);"><img src="logo-purple-v2-192.png" alt="더필코리아" style="width:100%;height:100%;object-fit:cover;border-radius:20px;"></div>
       </div>
       <div style="font-size:10px;letter-spacing:3px;color:#1b64da;text-transform:uppercase;font-weight:700;margin-bottom:4px;">THE FEEL KOREA</div>
       <div style="font-size:17px;color:#1a1a22;font-weight:700;margin-bottom:20px;">운영 시스템 로그인</div>
@@ -406,7 +406,7 @@ if ('serviceWorker' in navigator) {
   <div class="scroll" id="scroll">
     <div class="app-head">
       <div class="brand">
-        <div class="mark"><img src="icon.png" alt="TFK"></div>
+        <div class="mark"><img src="logo-purple-v2-192.png" alt="TFK"></div>
         <div>
           <div class="sub">THE FEEL KOREA</div>
           <div class="ttl" id="headTitle">운영 대시보드</div>
@@ -935,7 +935,7 @@ if ('serviceWorker' in navigator) {
     <!-- ===================== 설정 ===================== -->
     <div class="screen" data-screen="settings" hidden>
       <div class="prof">
-        <div class="pic"><img src="icon.png" alt="TFK"></div>
+        <div class="pic"><img src="logo-purple-v2-192.png" alt="TFK"></div>
         <div>
           <div class="pn">더필코리아</div>
           <div class="pm">박준모 · 운영 · <span id="setVer">v—</span></div>
@@ -4346,7 +4346,7 @@ if ('serviceWorker' in navigator) {
         const href = (mfst.getAttribute('href') || 'manifest.webmanifest').split('?')[0];
         mfst.setAttribute('href', href + _v);
       }
-      // 페이지 내 <img src="icon.png"> 도 갱신
+      // 페이지 내 <img src="logo-purple-v2-192.png"> 도 갱신
       document.querySelectorAll('img[src*="icon.png"], img[src*="icon-512.png"]').forEach(img => {
         const src = (img.getAttribute('src') || '').split('?')[0];
         img.setAttribute('src', src + _v);
