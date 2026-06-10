@@ -1,5 +1,6 @@
-// v2.47.80 SW — .json/.enc/.html은 network-first, 자산은 cache-first
-const CACHE = 'thefeel-mobile-v2.47.80';
+// v2.47.120 SW — .json/.enc/.html은 network-first, 자산은 cache-first
+// 새 보라 픽셀 TF 아이콘 적용 — 옛 캐시 강제 무효화
+const CACHE = 'thefeel-mobile-v2.47.120';
 const ASSETS = [
   './',
   './index.html',
