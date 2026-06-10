@@ -1005,9 +1005,10 @@ if ('serviceWorker' in navigator) {
   <div class="toast" id="toast">완료</div>
 
   <nav class="tabbar">
-    <div class="tab-item active" data-screen="dashboard">
+    <div class="tab-item active" data-screen="dashboard" style="position:relative;">
       <svg class="tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
       <span class="tab-tx">대시보드</span>
+      <span id="tabLpBadge" style="position:absolute;top:2px;right:14px;font-size:9px;background:#dc2626;color:white;padding:1px 5px;border-radius:8px;font-weight:700;font-family:'MonoLocal',monospace;display:none;line-height:1.2;">—</span>
     </div>
     <div class="tab-item" data-screen="settlement">
       <svg class="tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
@@ -2002,6 +2003,14 @@ if ('serviceWorker' in navigator) {
     ).length;
     if (urgentCount >= 3) card.classList.add('urgent');
     else card.classList.remove('urgent');
+    // v2.47.117: 탭바 배지
+    const tabBadge = document.getElementById('tabLpBadge');
+    if (tabBadge) {
+      if (urgentCount > 0) {
+        tabBadge.style.display = 'inline-block';
+        tabBadge.textContent = urgentCount > 99 ? '99+' : urgentCount;
+      } else tabBadge.style.display = 'none';
+    }
     setTimeout(alertUrgentLp, 2000);
   }
 
