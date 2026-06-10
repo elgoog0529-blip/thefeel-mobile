@@ -477,7 +477,58 @@ if ('serviceWorker' in navigator) {
           </div>
         </div>
       </div>
+
+      <!-- v2.47.102: 2026년 누적 매출 카드 (네이버 OAPI 연간) -->
+      <div id="naverYearlyCard" style="background:linear-gradient(135deg,rgba(26,115,232,0.14),rgba(147,51,234,0.06));border:1px solid rgba(26,115,232,0.30);border-radius:14px;padding:14px;margin-bottom:12px;display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#1a73e8,#9333ea);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:11px;">26</div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#1a73e8;letter-spacing:0.4px;">📊 2026년 누적 매출</div>
+              <div id="nyrCardSub" style="font-size:10px;color:var(--soft);margin-top:1px;">—</div>
+            </div>
+          </div>
+          <button id="nyrToggle" style="padding:5px 9px;border:1px solid rgba(26,115,232,0.30);border-radius:7px;background:rgba(26,115,232,0.08);color:#1a73e8;font-size:10.5px;font-weight:600;cursor:pointer;">▼ 펼치기</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;">
+          <div style="padding:9px;background:rgba(255,255,255,0.06);border-radius:9px;">
+            <div style="font-size:9.5px;color:var(--soft);">총 매출</div>
+            <div id="nyrTotal" style="font-size:15px;font-weight:700;color:#1a73e8;font-family:'MonoLocal',monospace;margin-top:2px;">—</div>
+            <div id="nyrPeriod" style="font-size:9.5px;color:var(--soft);">—</div>
+          </div>
+          <div style="padding:9px;background:rgba(255,255,255,0.06);border-radius:9px;">
+            <div style="font-size:9.5px;color:var(--soft);">총 주문 · 수량</div>
+            <div id="nyrCount" style="font-size:15px;font-weight:700;color:#02a647;font-family:'MonoLocal',monospace;margin-top:2px;">—</div>
+            <div id="nyrAov" style="font-size:9.5px;color:var(--soft);">—</div>
+          </div>
+          <div style="padding:9px;background:rgba(255,255,255,0.06);border-radius:9px;">
+            <div style="font-size:9.5px;color:var(--soft);">예상 정산 88.24%</div>
+            <div id="nyrSettle" style="font-size:14px;font-weight:700;color:#02a647;font-family:'MonoLocal',monospace;margin-top:2px;">—</div>
+          </div>
+          <div style="padding:9px;background:rgba(255,255,255,0.06);border-radius:9px;">
+            <div style="font-size:9.5px;color:var(--soft);">예상 이익 17.22%</div>
+            <div id="nyrProfit" style="font-size:14px;font-weight:700;color:#f59e0b;font-family:'MonoLocal',monospace;margin-top:2px;">—</div>
+          </div>
+        </div>
+        <!-- 월별 막대 (미니) -->
+        <div style="margin-top:10px;">
+          <div style="font-size:10px;color:var(--soft);margin-bottom:5px;">월별 매출</div>
+          <div id="nyrMonthly" style="display:grid;grid-template-columns:repeat(12,1fr);gap:2px;align-items:end;height:50px;"></div>
+          <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:2px;margin-top:3px;font-size:8px;color:var(--soft);text-align:center;">
+            <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span>
+          </div>
+        </div>
+        <!-- 펼침: 월별 상세 + 최근 주문 30건 -->
+        <div id="nyrExpanded" style="display:none;margin-top:10px;">
+          <div style="font-size:10px;color:var(--soft);margin-bottom:5px;">월별 상세</div>
+          <div id="nyrMonthlyTable" style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;font-size:11px;"></div>
+          <div style="font-size:10px;color:var(--soft);margin-top:10px;margin-bottom:5px;">최근 주문 (최대 200건)</div>
+          <div id="nyrOrders" style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;font-size:10.5px;max-height:420px;overflow-y:auto;"></div>
+        </div>
+      </div>
+
       <!-- v2.47.12: 떠오르는 베스트셀러 (sellPct 60~85 AND 재고 충분) -->
+
       <div id="trendingCard" style="background:linear-gradient(135deg,rgba(3,199,90,0.10),rgba(27,100,218,0.05));border:1px solid rgba(3,199,90,0.25);border-radius:14px;padding:12px 14px;margin-bottom:12px;display:none;cursor:pointer;">
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div>
@@ -1237,7 +1288,7 @@ if ('serviceWorker' in navigator) {
   }
 
   // ─── 데이터 로드 ───
-  let D = null, INV = null, MD = null, TXN = null, DAILY = null, NAVER_RT = null;
+  let D = null, INV = null, MD = null, TXN = null, DAILY = null, NAVER_RT = null, NAVER_YEARLY = null;
 
   // v2.47.56: 채널별 정산 주기 매핑 (D+N 영업일)
   const CHANNEL_SETTLE_DAYS = {
@@ -1579,6 +1630,107 @@ if ('serviceWorker' in navigator) {
   }
   setInterval(renderNaverCard, 60 * 1000);
 
+  // v2.47.102: 2026년 누적 매출 카드
+  function renderNaverYearlyCard() {
+    const card = document.getElementById('naverYearlyCard');
+    if (!card) return;
+    if (!NAVER_YEARLY || !NAVER_YEARLY.monthly || NAVER_YEARLY.monthly.length === 0) {
+      card.style.display = 'none'; return;
+    }
+    card.style.display = 'block';
+    const d = NAVER_YEARLY;
+    const setT = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    const setH = (id, v) => { const el = document.getElementById(id); if (el) el.innerHTML = v; };
+
+    setT('nyrTotal', fmtK(d.totalAmount || 0));
+    setT('nyrCount', (d.totalCount || 0).toLocaleString() + '건');
+    setT('nyrSettle', fmtK(d.estimatedSettlement || 0));
+    setT('nyrProfit', fmtK(d.estimatedProfit || 0));
+    const aov = d.totalCount > 0 ? Math.round(d.totalAmount / d.totalCount) : 0;
+    setT('nyrAov', '평균 ' + fmtK(aov) + ' · ' + (d.totalQty || 0).toLocaleString() + '개');
+    const m = d.monthly || [];
+    if (m.length > 0) {
+      setT('nyrPeriod', `${m[0].ym} ~ ${m[m.length-1].ym}`);
+      setT('nyrCardSub', `${m.length}개월 · 동기화 ${d.syncedAt ? new Date(d.syncedAt).toLocaleDateString('ko-KR') : '—'}`);
+    }
+
+    // 월별 미니 막대
+    const year = d.year;
+    const monthlyMap = {};
+    m.forEach(x => { monthlyMap[x.ym] = x; });
+    const monthly12 = Array.from({length:12}, (_, i) => {
+      const k = `${year}-${String(i+1).padStart(2,'0')}`;
+      return monthlyMap[k] || { ym: k, amount: 0, count: 0, qty: 0 };
+    });
+    const maxAmt = Math.max(1, ...monthly12.map(x => x.amount));
+    const nowMonth = new Date().getMonth() + 1;
+    setH('nyrMonthly', monthly12.map((x, i) => {
+      const h = Math.max(3, (x.amount / maxAmt) * 48);
+      const isCurrent = (i+1) === nowMonth && year === new Date().getFullYear();
+      const color = x.amount > 0 ? (isCurrent ? '#9333ea' : '#1a73e8') : 'rgba(255,255,255,0.10)';
+      return `<div title="${x.ym}: ${fmtK(x.amount)} (${x.count}건)" style="height:${h}px;background:${color};border-radius:3px 3px 0 0;cursor:pointer;"></div>`;
+    }).join(''));
+
+    // 월별 상세 (테이블 형태로)
+    setH('nyrMonthlyTable', monthly12.filter(x => x.amount > 0).map(x => {
+      const aov = x.count > 0 ? Math.round(x.amount / x.count) : 0;
+      return `<div style="display:grid;grid-template-columns:60px 1fr 60px 70px;gap:5px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+        <div style="color:#1a73e8;font-weight:700;">${x.ym.slice(5)}월</div>
+        <div style="font-family:'MonoLocal',monospace;font-weight:700;text-align:right;">${fmtK(x.amount)}</div>
+        <div style="color:var(--soft);text-align:right;">${x.count}건</div>
+        <div style="color:var(--soft);text-align:right;font-size:10px;">AOV ${fmtK(aov)}</div>
+      </div>`;
+    }).join(''));
+
+    // 최근 주문 200건
+    const statusKor = (s) => {
+      const map = {
+        'PAYMENT_WAITING':'결제대기','PAYED':'결제완료','DELIVERING':'배송중',
+        'DELIVERED':'배송완료','PURCHASE_DECIDED':'구매확정','CANCELED':'취소',
+        'RETURNED':'반품','EXCHANGED':'교환','DISPATCHED':'발송완료',
+      };
+      return map[s] || s || '';
+    };
+    const statusColor = (s) => {
+      if (!s) return 'var(--soft)';
+      if (s.includes('CANCEL') || s.includes('RETURN')) return '#fa5252';
+      if (s.includes('PAYED')) return '#02a647';
+      if (s.includes('PURCHASE')) return '#02a647';
+      if (s.includes('DISPATCH')) return '#1a73e8';
+      return 'var(--soft)';
+    };
+    const orders = d.orders || [];
+    setH('nyrOrders', orders.slice(0, 200).map(o => `
+      <div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+        <div style="display:flex;justify-content:space-between;gap:6px;font-size:10px;color:var(--soft);">
+          <span>${(o.paymentDate||'').slice(0,10)}</span>
+          <span style="color:${statusColor(o.status)};font-weight:600;">${statusKor(o.status)}</span>
+        </div>
+        <div style="font-size:11px;font-weight:600;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(o.productName||'—').slice(0,50)}</div>
+        <div style="display:flex;justify-content:space-between;gap:6px;margin-top:2px;font-size:10.5px;font-family:'MonoLocal',monospace;">
+          <span style="color:var(--soft);">× ${o.qty} · ${o.productOrderId||''}</span>
+          <span style="font-weight:700;color:#1a73e8;">${fmtK(o.amount)}</span>
+        </div>
+      </div>
+    `).join(''));
+  }
+
+  // 펼치기/접기 토글
+  document.addEventListener('click', (e) => {
+    if (e.target.id === 'nyrToggle') {
+      const exp = document.getElementById('nyrExpanded');
+      const btn = e.target;
+      if (exp.style.display === 'none' || !exp.style.display) {
+        exp.style.display = 'block';
+        btn.textContent = '▲ 접기';
+        haptic();
+      } else {
+        exp.style.display = 'none';
+        btn.textContent = '▼ 펼치기';
+      }
+    }
+  });
+
   let SET_TAB = 'channel';
   let SET_SORT = 'settle';
   let BE_TAB = 'all';
@@ -1615,7 +1767,9 @@ if ('serviceWorker' in navigator) {
       try { TXN = await _fetchSecure('transactions', refresh); } catch (e) { /* optional */ }
       try { DAILY = await _fetchSecure('daily', refresh); } catch (e) { /* optional */ }
       try { NAVER_RT = await _fetchSecure('naver-realtime', refresh); } catch (e) { /* optional */ }
+      try { NAVER_YEARLY = await _fetchSecure('naver-yearly', refresh); } catch (e) { /* optional */ }
       renderNaverCard();
+      renderNaverYearlyCard();
       renderAll();
       if (refresh) toast('데이터 갱신됨');
       // v2.47.32: 데이터 무결성 자동 체크 — 핵심 데이터 누락 시 경고

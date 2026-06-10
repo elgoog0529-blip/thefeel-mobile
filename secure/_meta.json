@@ -7,28 +7,28 @@
   "users": [
     {
       "userHash": "55e018b8075afd51a6cb81a4a96a04b12ff15d7f3d91d777a46c7922d8809089",
-      "wrappedKey": "KtxKgcWezZk3lRy4V5tSv6nlH8A834MJ6siR1Cm+urau3Dv2ai4fVwNPR/arBkjA",
-      "wrapIv": "RLqmQ1a/eTZE7hom"
+      "wrappedKey": "PRjj2L9MthTZVHsNtlVPUYH8I9Hlt3ecAppxZjgSeutiOI1a8shPkIBaOLbzwl+k",
+      "wrapIv": "SBQZw9bICYyOZOMU"
     },
     {
       "userHash": "cf4f3cfbcb8b1b76c51b48fec78540624c40ddfb19ef4cc534e3dae83b58fbb7",
-      "wrappedKey": "W2tGVcKc606KqaYwA/uNmfCdktD+lbWqmHipTaVjDyC4wUsrDs6i5QBaznbqVnHM",
-      "wrapIv": "hy8jrpfC0OIzRrze"
+      "wrappedKey": "EN+xSyJrxmKPp/IgyB8Ck+8lj16YtE2adK3OfeqZPS+Owmwk6cfHeNBz6UbyvhAB",
+      "wrapIv": "DFb1WaqEb/ggavYv"
     },
     {
       "userHash": "4af8648177a37f9c2b6f68eed11d493d8ce82d7d0df2099b45d1b62c927371c2",
-      "wrappedKey": "o/aWvyBysPTdwpnLs5tU/s6iCRHkuJcY+ce7obNV+Bs7beUrI+ddqC8eG41mYx/E",
-      "wrapIv": "1P/YARCPJrhC3iKZ"
+      "wrappedKey": "sZM1HwOSnVwv6kIwLsgbZ220YYTS1g9tfSzXBKUZ5QtZvgA0NsmuUHezrXhikB99",
+      "wrapIv": "71JAzwIXpnWOzzGs"
     },
     {
       "userHash": "9f1048adc387f423cc1282d0f2e5e4137e5206a76deca514534fb0577ef457b6",
-      "wrappedKey": "jE/bXTA3LkcnknVqKBufXh0CAo90EXEUigemv3KVsmTkso0WV0UAu0jRqPVljmCg",
-      "wrapIv": "lQFoqbErwSB0H1sT"
+      "wrappedKey": "v2X4gmojegjuF7fLvvwzg6koqtEGLZbXPkt0gKmTO+yzpYPnLr//QwRywrudcGx/",
+      "wrapIv": "dprnmqN3BR0bVO2Z"
     },
     {
       "userHash": "54fa3260ad8a8ce02b79011aea960f16f6a308698113ab311db49c7500c4921b",
-      "wrappedKey": "o4WiiTfTPUCgBbeBaVM0WwGXdzKO1/Eb2pDUnvtqgUhKn+gFCcPRY3dZYk4EQIdN",
-      "wrapIv": "kHZyUERJTc38x0Pz"
+      "wrappedKey": "RZ1b9e1BkGc6JP/NnyM7jSkyiwjhFojQRr5am5KPNUssTe1r6UCX3LhXDmEgRIC7",
+      "wrapIv": "EhMainFsN3vQB2dQ"
     }
   ],
   "files": {
@@ -37,7 +37,8 @@
     "md.json": "secure/md.enc",
     "transactions.json": "secure/transactions.enc",
     "daily.json": "secure/daily.enc",
-    "naver-realtime.json": "secure/naver-realtime.enc"
+    "naver-realtime.json": "secure/naver-realtime.enc",
+    "naver-yearly.json": "secure/naver-yearly.enc"
   },
-  "createdAt": "2026-06-10T02:56:23.507Z"
+  "createdAt": "2026-06-10T04:36:49.678Z"
 }
