@@ -520,12 +520,33 @@ if ('serviceWorker' in navigator) {
         </div>
         <!-- 펼침: 월별 상세 + 최근 주문 30건 -->
         <div id="nyrExpanded" style="display:none;margin-top:10px;">
+          <!-- v2.47.104: 요일별 + 시간대별 패턴 -->
+          <div style="font-size:10px;color:var(--soft);margin-bottom:5px;">📆 요일별 · ⏰ 시간대별</div>
+          <div style="display:grid;grid-template-columns:1fr 2fr;gap:6px;background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;margin-bottom:10px;">
+            <div>
+              <div id="nyrWeekday" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;align-items:end;height:48px;"></div>
+              <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:3px;font-size:8px;color:var(--soft);text-align:center;">
+                <span style="color:#fa5252;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#1a73e8;">토</span>
+              </div>
+            </div>
+            <div>
+              <div id="nyrHourly" style="display:grid;grid-template-columns:repeat(24,1fr);gap:1px;align-items:end;height:48px;"></div>
+              <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:8px;color:var(--soft);">
+                <span>0시</span><span>6</span><span>12</span><span>18</span><span>23</span>
+              </div>
+            </div>
+          </div>
           <!-- v2.47.103: 주문 상태 분포 -->
           <div style="font-size:10px;color:var(--soft);margin-bottom:5px;">🎯 주문 상태 (순매출: <span id="nyrNetRev" style="color:#02a647;font-weight:700;font-family:'MonoLocal',monospace;">—</span>)</div>
           <div id="nyrStatus" style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;font-size:10.5px;margin-bottom:10px;"></div>
           <!-- 브랜드 Top 10 -->
           <div style="font-size:10px;color:var(--soft);margin-bottom:5px;">🏷️ Top 10 브랜드</div>
           <div id="nyrBrands" style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;font-size:10.5px;margin-bottom:10px;"></div>
+          <!-- v2.47.105: Top 베스트셀러 + VIP -->
+          <div style="font-size:10px;color:var(--soft);margin-bottom:5px;">🏆 Top 10 베스트셀러</div>
+          <div id="nyrBestseller" style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;font-size:10.5px;margin-bottom:10px;max-height:240px;overflow-y:auto;"></div>
+          <div style="font-size:10px;color:var(--soft);margin-bottom:5px;">👑 VIP 고객 (5건+) <span id="nyrCustDist" style="float:right;color:var(--soft);font-size:9.5px;">—</span></div>
+          <div id="nyrVip" style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;font-size:10.5px;margin-bottom:10px;max-height:200px;overflow-y:auto;"></div>
           <!-- 월별 상세 -->
           <div style="font-size:10px;color:var(--soft);margin-bottom:5px;">📅 월별 상세</div>
           <div id="nyrMonthlyTable" style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;font-size:11px;"></div>
@@ -1678,6 +1699,23 @@ if ('serviceWorker' in navigator) {
       return `<div title="${x.ym}: ${fmtK(x.amount)} (${x.count}건)" style="height:${h}px;background:${color};border-radius:3px 3px 0 0;cursor:pointer;"></div>`;
     }).join(''));
 
+    // v2.47.104: 요일별 + 시간대별
+    const weekdaySum = d.weekdaySummary || [];
+    const maxWd = Math.max(1, ...weekdaySum.map(w => w.amount));
+    setH('nyrWeekday', weekdaySum.map((w, i) => {
+      const h = Math.max(3, (w.amount / maxWd) * 42);
+      const isWeekend = i === 0 || i === 6;
+      const color = isWeekend ? '#fa5252' : '#1a73e8';
+      return `<div title="${w.day}: ${fmtK(w.amount)} (${w.count}건)" style="height:${h}px;background:${color};border-radius:2px 2px 0 0;opacity:0.85;"></div>`;
+    }).join(''));
+    const hourSum = d.hourlySummary || [];
+    const maxHr = Math.max(1, ...hourSum.map(h => h.amount));
+    setH('nyrHourly', hourSum.map(h => {
+      const ht = Math.max(2, (h.amount / maxHr) * 42);
+      const c = h.amount === maxHr ? '#f59e0b' : (h.amount > 0 ? '#1a73e8' : 'rgba(255,255,255,0.10)');
+      return `<div title="${h.hour}시: ${fmtK(h.amount)} (${h.count}건)" style="height:${ht}px;background:${c};border-radius:2px 2px 0 0;opacity:0.85;"></div>`;
+    }).join(''));
+
     // v2.47.103: 주문 상태 분포 + 순매출
     const statusMeta = {
       'PURCHASE_DECIDED':{l:'구매확정',c:'#02a647'},'DELIVERED':{l:'배송완료',c:'#1a73e8'},
@@ -1717,6 +1755,35 @@ if ('serviceWorker' in navigator) {
         </div>
         <span style="min-width:60px;text-align:right;font-size:10px;font-family:'MonoLocal',monospace;font-weight:700;">${fmtK(v.amount)}</span>
         <span style="min-width:30px;text-align:right;font-size:9.5px;color:var(--soft);">${v.count}건</span>
+      </div>`;
+    }).join(''));
+
+    // v2.47.105: Top 베스트셀러 + VIP 고객
+    const best = d.bestsellerSummary || [];
+    setH('nyrBestseller', best.slice(0, 10).map((p, i) => {
+      const medal = ['🥇','🥈','🥉'][i] || `${i+1}.`;
+      return `<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+        <div style="display:flex;align-items:center;gap:5px;">
+          <span style="font-size:11px;">${medal}</span>
+          <span style="flex:1;font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(p.name||'').slice(0,40)}</span>
+          <span style="font-size:11px;font-weight:700;color:#1a73e8;font-family:'MonoLocal',monospace;">${p.qty}개</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--soft);font-family:'MonoLocal',monospace;margin-top:2px;">
+          <span>${p.sku||''}</span>
+          <span>${fmtK(p.amount)}</span>
+        </div>
+      </div>`;
+    }).join(''));
+    const vip = d.vipCustomerSummary || [];
+    const cd = d.customerDistribution || {};
+    setT('nyrCustDist', `총 ${(cd.total||0).toLocaleString()}명 · 5+ ${cd.repeat5||0}`);
+    setH('nyrVip', vip.slice(0, 10).map((c, i) => {
+      const crown = i < 3 ? '👑' : `${i+1}.`;
+      return `<div style="display:flex;align-items:center;gap:5px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+        <span style="min-width:20px;font-size:10.5px;">${crown}</span>
+        <span style="flex:1;font-size:11px;font-weight:600;">${c.name}</span>
+        <span style="font-size:10.5px;color:#9333ea;font-weight:700;font-family:'MonoLocal',monospace;">${c.count}건</span>
+        <span style="min-width:55px;text-align:right;font-size:10px;font-family:'MonoLocal',monospace;">${fmtK(c.amount)}</span>
       </div>`;
     }).join(''));
 
