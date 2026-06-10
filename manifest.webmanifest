@@ -12,10 +12,10 @@
   "lang": "ko-KR",
   "categories": ["business", "productivity", "finance"],
   "icons": [
-    { "src": "icon-192.png?v=2.47.120", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png?v=2.47.120", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png?v=2.47.120", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
-    { "src": "icon-1024.png?v=2.47.120", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
+    { "src": "logo-purple-v2-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "logo-purple-v2-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "logo-purple-v2-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "logo-purple-v2.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
   ],
   "shortcuts": [
     {
@@ -23,14 +23,14 @@
       "short_name": "정산",
       "description": "월간 매출명세서 보기",
       "url": "./?screen=breakeven",
-      "icons": [{"src": "icon-192.png?v=2.47.120", "sizes": "192x192"}]
+      "icons": [{"src": "logo-purple-v2-192.png", "sizes": "192x192"}]
     },
     {
       "name": "재고",
       "short_name": "재고",
       "description": "재고 현황 조회",
       "url": "./?screen=inventory",
-      "icons": [{"src": "icon-192.png?v=2.47.120", "sizes": "192x192"}]
+      "icons": [{"src": "logo-purple-v2-192.png", "sizes": "192x192"}]
     }
   ]
 }
