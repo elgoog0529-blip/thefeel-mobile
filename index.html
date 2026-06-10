@@ -542,6 +542,12 @@ if ('serviceWorker' in navigator) {
           <!-- 브랜드 Top 10 -->
           <div style="font-size:10px;color:var(--soft);margin-bottom:5px;">🏷️ Top 10 브랜드</div>
           <div id="nyrBrands" style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;font-size:10.5px;margin-bottom:10px;"></div>
+          <!-- v2.47.106: 단가 분포 -->
+          <div style="font-size:10px;color:var(--soft);margin-bottom:5px;">💵 단가 분포</div>
+          <div id="nyrPriceDist" style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;font-size:10.5px;margin-bottom:10px;"></div>
+          <!-- v2.47.105: 카테고리 -->
+          <div style="font-size:10px;color:var(--soft);margin-bottom:5px;">📂 카테고리별 매출</div>
+          <div id="nyrCategory" style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;font-size:10.5px;margin-bottom:10px;"></div>
           <!-- v2.47.105: Top 베스트셀러 + VIP -->
           <div style="font-size:10px;color:var(--soft);margin-bottom:5px;">🏆 Top 10 베스트셀러</div>
           <div id="nyrBestseller" style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;font-size:10.5px;margin-bottom:10px;max-height:240px;overflow-y:auto;"></div>
@@ -1755,6 +1761,39 @@ if ('serviceWorker' in navigator) {
         </div>
         <span style="min-width:60px;text-align:right;font-size:10px;font-family:'MonoLocal',monospace;font-weight:700;">${fmtK(v.amount)}</span>
         <span style="min-width:30px;text-align:right;font-size:9.5px;color:var(--soft);">${v.count}건</span>
+      </div>`;
+    }).join(''));
+
+    // v2.47.106: 단가 분포
+    const priceDist = d.priceDistribution || [];
+    const maxPC = Math.max(1, ...priceDist.map(p => p.count));
+    setH('nyrPriceDist', priceDist.map(p => {
+      const pct = (p.count / maxPC * 100);
+      const color = p.lo >= 1000000 ? '#f59e0b' : (p.lo >= 300000 ? '#02a647' : '#1a73e8');
+      return `<div style="display:flex;align-items:center;gap:5px;padding:3px 0;">
+        <span style="min-width:65px;font-size:10px;font-weight:600;color:${color};">${p.label}</span>
+        <div style="flex:1;height:10px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;position:relative;">
+          <div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${color};opacity:0.85;"></div>
+          <span style="position:absolute;left:4px;top:50%;transform:translateY(-50%);font-size:8.5px;font-weight:700;color:#fff;text-shadow:0 0 2px rgba(0,0,0,0.5);">${p.count}건</span>
+        </div>
+        <span style="min-width:55px;text-align:right;font-size:9.5px;font-family:'MonoLocal',monospace;font-weight:700;">${fmtK(p.amount)}</span>
+      </div>`;
+    }).join(''));
+
+    // v2.47.105: 카테고리
+    const catSum = d.categorySummary || [];
+    const totalCat = catSum.reduce((s,v) => s + v.amount, 0);
+    const CAT_COLORS = {'가방':'#1a73e8','신발':'#9333ea','의류-상의':'#02a647','의류-하의':'#0bb','아우터':'#f59e0b','지갑/벨트':'#fa5252','스카프/모자':'#ec4899','주얼리':'#facc15','선글라스/시계':'#06b6d4','기타':'#94a3b8'};
+    setH('nyrCategory', catSum.map(c => {
+      const pct = totalCat > 0 ? (c.amount / totalCat * 100) : 0;
+      const color = CAT_COLORS[c.category] || '#888';
+      return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;">
+        <span style="min-width:80px;font-size:10.5px;font-weight:600;color:${color};">${c.category}</span>
+        <div style="flex:1;height:11px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;position:relative;">
+          <div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${color};opacity:0.85;"></div>
+          <span style="position:absolute;left:4px;top:50%;transform:translateY(-50%);font-size:9px;font-weight:700;color:#fff;text-shadow:0 0 2px rgba(0,0,0,0.5);">${pct.toFixed(1)}%</span>
+        </div>
+        <span style="min-width:60px;text-align:right;font-size:10px;font-family:'MonoLocal',monospace;font-weight:700;">${fmtK(c.amount)}</span>
       </div>`;
     }).join(''));
 
