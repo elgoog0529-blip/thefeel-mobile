@@ -669,6 +669,42 @@ if ('serviceWorker' in navigator) {
       <!-- v2.46.23: 최근 거래 Top 15 (PC와 동일성) -->
       <div class="sec-head"><span class="sec-title">최근 거래 (Top 5)</span><span class="sec-more">정산+MD 통합</span></div>
       <div class="list" id="dashRecent15"></div>
+
+      <!-- v2.47.112: 최저가조사 요약 (read-only) -->
+      <div id="mLpCard" style="background:linear-gradient(135deg,rgba(220,38,38,0.10),rgba(245,158,11,0.04));border:1px solid rgba(220,38,38,0.25);border-radius:14px;padding:14px;margin-top:14px;display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#dc2626,#f59e0b);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:13px;">🔍</div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#dc2626;letter-spacing:0.4px;">최저가조사 — PC 결과</div>
+              <div id="mLpSub" style="font-size:10px;color:var(--soft);margin-top:1px;">—</div>
+            </div>
+          </div>
+          <button id="mLpToggle" style="padding:5px 9px;border:1px solid rgba(220,38,38,0.30);border-radius:7px;background:rgba(220,38,38,0.08);color:#dc2626;font-size:10.5px;font-weight:600;cursor:pointer;">▼ 펼치기</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+          <div style="padding:8px;background:rgba(220,38,38,0.06);border-radius:8px;text-align:center;">
+            <div style="font-size:9.5px;color:var(--soft);">🔴 비쌈</div>
+            <div id="mLpHigher" style="font-size:16px;font-weight:700;color:#dc2626;font-family:'MonoLocal',monospace;margin-top:2px;">—</div>
+          </div>
+          <div style="padding:8px;background:rgba(245,158,11,0.06);border-radius:8px;text-align:center;">
+            <div style="font-size:9.5px;color:var(--soft);">🟡 동급</div>
+            <div id="mLpNear" style="font-size:16px;font-weight:700;color:#f59e0b;font-family:'MonoLocal',monospace;margin-top:2px;">—</div>
+          </div>
+          <div style="padding:8px;background:rgba(5,150,105,0.06);border-radius:8px;text-align:center;">
+            <div style="font-size:9.5px;color:var(--soft);">🟢 최저가</div>
+            <div id="mLpLowest" style="font-size:16px;font-weight:700;color:#059669;font-family:'MonoLocal',monospace;margin-top:2px;">—</div>
+          </div>
+          <div style="padding:8px;background:rgba(217,119,6,0.06);border-radius:8px;text-align:center;">
+            <div style="font-size:9.5px;color:#d97706;">⭐ 스텔라</div>
+            <div id="mLpStella" style="font-size:16px;font-weight:700;color:#d97706;font-family:'MonoLocal',monospace;margin-top:2px;">—</div>
+          </div>
+        </div>
+        <div id="mLpExpanded" style="display:none;margin-top:10px;">
+          <div style="font-size:10px;color:var(--soft);margin-bottom:5px;">🚨 비쌈 Top 10 (큰 차이순)</div>
+          <div id="mLpList" style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;font-size:10.5px;max-height:340px;overflow-y:auto;"></div>
+        </div>
+      </div>
     </div>
 
     <!-- ===================== 정산 ===================== -->
@@ -1322,7 +1358,7 @@ if ('serviceWorker' in navigator) {
   }
 
   // ─── 데이터 로드 ───
-  let D = null, INV = null, MD = null, TXN = null, DAILY = null, NAVER_RT = null, NAVER_YEARLY = null;
+  let D = null, INV = null, MD = null, TXN = null, DAILY = null, NAVER_RT = null, NAVER_YEARLY = null, LP_DATA = null;
 
   // v2.47.56: 채널별 정산 주기 매핑 (D+N 영업일)
   const CHANNEL_SETTLE_DAYS = {
@@ -1870,8 +1906,79 @@ if ('serviceWorker' in navigator) {
     `).join(''));
   }
 
+  // v2.47.113: 위험상품 자동 알림 (한 세션 1회)
+  let _lpAlertShown = false;
+  function alertUrgentLp() {
+    if (_lpAlertShown || !LP_DATA || !LP_DATA.results) return;
+    const urgent = LP_DATA.results.filter(r =>
+      r.verdict === 'higher' &&
+      (r.priceDiffPct || 0) >= 30 &&
+      (r.profitMargin || 0) >= 10 &&
+      !r.stellaIsLowest
+    );
+    if (urgent.length >= 3) {
+      _lpAlertShown = true;
+      toast(`🚨 긴급 가격조정 ${urgent.length}개 — 시장 대비 30%+ 비쌈`, 'warning', 6000);
+      if (typeof notifPush === 'function') {
+        notifPush('warning', '🚨 최저가조사', `${urgent.length}개 상품이 시장 대비 30% 이상 비쌈 — 가격 조정 검토 필요`);
+      }
+    }
+  }
+
+  // v2.47.112: 최저가조사 모바일 카드 (read-only)
+  function renderLpCard() {
+    const card = document.getElementById('mLpCard');
+    if (!card) return;
+    if (!LP_DATA || !LP_DATA.results) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    const setT = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    const setH = (id, v) => { const el = document.getElementById(id); if (el) el.innerHTML = v; };
+    const s = LP_DATA.summary || {};
+    const total = LP_DATA.compared || 0;
+    const stellaLow = (LP_DATA.results || []).filter(r => r.stellaIsLowest).length;
+    setT('mLpHigher', (s.higher || 0).toLocaleString());
+    setT('mLpNear', (s.near || 0).toLocaleString());
+    setT('mLpLowest', (s.lowest || 0).toLocaleString());
+    setT('mLpStella', stellaLow.toLocaleString());
+    const ts = LP_DATA.syncedAt ? new Date(LP_DATA.syncedAt).toLocaleString('ko-KR', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '—';
+    setT('mLpSub', `${total.toLocaleString()}개 비교 · ${ts}`);
+
+    // Top 10 비쌈 (차이 큰 순)
+    const top10 = (LP_DATA.results || [])
+      .filter(r => r.verdict === 'higher')
+      .sort((a,b) => (b.priceDiffPct || 0) - (a.priceDiffPct || 0))
+      .slice(0, 10);
+    setH('mLpList', top10.map((r, i) => {
+      const pct = r.priceDiffPct || 0;
+      const stellaMark = r.stellaIsLowest ? '<span style="color:#d97706;font-weight:700;"> ⭐</span>' : '';
+      return `<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+        <div style="display:flex;align-items:center;gap:5px;font-size:10.5px;">
+          <span style="color:var(--soft);min-width:20px;">${i+1}.</span>
+          <span style="flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.brand||'—'} ${(r.modelCode||'').slice(0,18)}</span>
+          <span style="color:#dc2626;font-weight:700;font-family:'MonoLocal',monospace;">+${pct}%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:2px;font-size:9.5px;color:var(--soft);font-family:'MonoLocal',monospace;">
+          <span>우리 ${fmtK(r.mobileDiscountedPrice)} → 시장 ${fmtK(r.marketLow)}${stellaMark}</span>
+          <span>${(r.marketLowSeller||'').slice(0,12)}</span>
+        </div>
+      </div>`;
+    }).join(''));
+  }
+
   // 펼치기/접기 토글
   document.addEventListener('click', (e) => {
+    if (e.target.id === 'mLpToggle') {
+      const exp = document.getElementById('mLpExpanded');
+      const btn = e.target;
+      if (exp.style.display === 'none' || !exp.style.display) {
+        exp.style.display = 'block';
+        btn.textContent = '▲ 접기';
+        haptic();
+      } else {
+        exp.style.display = 'none';
+        btn.textContent = '▼ 펼치기';
+      }
+    }
     if (e.target.id === 'nyrToggle') {
       const exp = document.getElementById('nyrExpanded');
       const btn = e.target;
@@ -1923,8 +2030,10 @@ if ('serviceWorker' in navigator) {
       try { DAILY = await _fetchSecure('daily', refresh); } catch (e) { /* optional */ }
       try { NAVER_RT = await _fetchSecure('naver-realtime', refresh); } catch (e) { /* optional */ }
       try { NAVER_YEARLY = await _fetchSecure('naver-yearly', refresh); } catch (e) { /* optional */ }
+      try { LP_DATA = await _fetchSecure('stellastore-compare', refresh); } catch (e) { /* optional */ }
       renderNaverCard();
       renderNaverYearlyCard();
+      renderLpCard();
       renderAll();
       if (refresh) toast('데이터 갱신됨');
       // v2.47.32: 데이터 무결성 자동 체크 — 핵심 데이터 누락 시 경고
