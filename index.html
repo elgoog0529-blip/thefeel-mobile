@@ -2839,14 +2839,33 @@ if ('serviceWorker' in navigator) {
         const m = show[+row.dataset.i];
         if (!m) return;
         // v2.47.38: 사이즈별 행에 data-cost 추가 — 클릭 시 단일 판매 이익률 계산기 자동 단가 입력
-        const sizesHtml = m.sizes.map(s => `<div class="lrow sku-size-row" data-cost="${s.u||0}" data-code="${s.c||''}" style="padding:10px 14px;cursor:pointer;"><div class="lic" style="background:var(--gold-soft);color:var(--gold-deep);font-size:11px;">${s.sz||'?'}</div><div class="lmain"><div class="lnm">${s.c}</div><div class="lsub">단가 ${fmtK(s.u)} · 최초입고 ${fmtN(s.i)}개</div></div><div class="lval"><div class="lamt">재고 ${fmtN(s.s)}</div><div class="lpct">${fmtK(s.stv)}</div></div></div>`).join('');
+        // v2.47.137: 사이즈별 통합 표시 (XS/S/M/L 별 수량+원가, 품목코드 여러 개여도 하나로)
+        const grouped = m.sizesGrouped || [];
+        const sizesGroupedHtml = grouped.map(sg => `<div class="lrow" style="padding:11px 14px;">
+          <div class="lic" style="background:var(--gold-soft);color:var(--gold-deep);font-size:13px;font-weight:700;">${sg.sz}</div>
+          <div class="lmain">
+            <div class="lnm">${sg.sz} 사이즈 <span style="color:var(--soft);font-size:11px;font-weight:400;">${sg.codeCount > 1 ? '· '+sg.codeCount+'개 코드 통합' : ''}</span></div>
+            <div class="lsub">평균 원가 ${fmtK(sg.avgInitialPrice || sg.avgPrice)} · 최초입고 ${fmtN(sg.initial)}개</div>
+          </div>
+          <div class="lval">
+            <div class="lamt" style="color:#1a73e8;">재고 ${fmtN(sg.stock)}</div>
+            <div class="lpct">${fmtK(sg.value)}</div>
+          </div>
+        </div>`).join('');
+        // 사이즈 요약 (상단) — XS/S/M/L 가로 칩
+        const sizeChipsHtml = grouped.map(sg => `<div style="flex:1;min-width:0;padding:8px 10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.20);border-radius:8px;text-align:center;">
+          <div style="font-size:13px;font-weight:700;color:#d97706;">${sg.sz}</div>
+          <div style="font-size:11px;font-weight:600;color:var(--text);margin-top:2px;">${fmtN(sg.stock)}개</div>
+          <div style="font-size:9.5px;color:var(--soft);font-family:'MonoLocal',monospace;">${fmtK(sg.value)}</div>
+        </div>`).join('');
         openModal(`${m.brand} ${m.model}`, `
           <div class="be-card"><div class="be-top"><div class="be-name">총 재고 / 입고</div><div class="be-diff ${m.stockTotal===0?'down':'up'}">${fmtN(m.stockTotal)} / ${fmtN(m.initialTotal)}</div></div><div class="be-prog"><i style="width:${m.sellPct}%"></i></div><div class="be-foot"><span>소진율</span><b>${m.sellPct.toFixed(1)}%</b></div></div>
           <div class="be-card"><div class="be-top"><div class="be-name">총 자산</div><div class="be-diff">${fmtK(m.stockValue)}</div></div><div class="be-foot"><span>단가 범위</span><b>${fmtK(m.unitPriceMin)}~${fmtK(m.unitPriceMax)}</b></div></div>
           <div class="be-card"><div class="be-top"><div class="be-name">최초입고 금액</div><div class="be-diff">${fmtK(m.initialValue)}</div></div></div>
           ${m.supplier ? `<div class="be-card"><div class="be-top"><div class="be-name">공급처</div><div class="be-diff" style="font-size:14px;">${m.supplier}</div></div></div>` : ''}
-          <div class="sec-head" style="margin-top:14px;"><span class="sec-title">사이즈별 (${m.sizes.length}개)</span></div>
-          <div class="list">${sizesHtml}</div>
+          ${grouped.length > 0 ? `<div class="sec-head" style="margin-top:14px;"><span class="sec-title">사이즈 요약</span></div><div style="display:flex;gap:6px;padding:0 12px;">${sizeChipsHtml}</div>` : ''}
+          <div class="sec-head" style="margin-top:14px;"><span class="sec-title">사이즈별 (${grouped.length}개 사이즈)</span></div>
+          <div class="list">${sizesGroupedHtml}</div>
         `, {share:{title:m.brand+' '+m.model, text:`재고 ${m.stockTotal}개 · 자산 ${fmtK(m.stockValue)} · 소진 ${m.sellPct.toFixed(0)}%`}});
       }));
       return;
