@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2f5496">
+<title>더필코리아 — 네이버 최저가 조사</title>
+<link rel="icon" type="image/png" href="../tfk-icon-192.png">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Apple SD Gothic Neo", "Segoe UI", system-ui, sans-serif;
+    background: #f4f5f7;
+    color: #1d2129;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    background: linear-gradient(135deg, #2f5496, #1e3a6f);
+    color: #fff;
+    padding: 18px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -0.3px; }
+  header p { margin: 4px 0 0; font-size: 12px; opacity: 0.85; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 20px 18px 80px; }
+  .panel { background: #fff; border-radius: 12px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 14px; }
+  .input-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  textarea {
+    flex: 1; min-width: 200px;
+    padding: 12px 14px;
+    border: 1px solid #d8dade;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'SF Mono', 'JetBrains Mono', Monaco, Consolas, monospace;
+    resize: vertical;
+    min-height: 80px;
+    background: #fafbfc;
+  }
+  textarea:focus { outline: none; border-color: #2f5496; background: #fff; box-shadow: 0 0 0 3px rgba(47,84,150,0.12); }
+  button {
+    padding: 11px 18px;
+    background: #2f5496;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 120ms;
+  }
+  button:hover { background: #1e3a6f; }
+  button:disabled { background: #94a3b8; cursor: not-allowed; }
+  .options { display: flex; gap: 16px; margin-top: 12px; font-size: 12.5px; color: #475569; flex-wrap: wrap; align-items: center; }
+  .options label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .hint { font-size: 11.5px; color: #94a3b8; margin-top: 6px; }
+  .result-section { margin-top: 18px; }
+  .result-section h2 { margin: 0 0 8px; font-size: 14px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px; }
+  .result-section .total { color: #64748b; font-size: 12px; font-weight: 500; }
+  .result-section .dropped { color: #f59e0b; font-size: 11px; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  thead { background: #f1f5f9; }
+  th, td { padding: 10px 12px; text-align: left; font-size: 12.5px; border-bottom: 1px solid #f1f5f9; }
+  th { font-weight: 600; color: #475569; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  td.num { text-align: right; font-family: 'SF Mono', monospace; font-weight: 600; }
+  td.price { color: #0f766e; font-weight: 700; }
+  td.first .rank { display: inline-block; background: #fbbf24; color: #78350f; padding: 2px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 700; }
+  td a { color: #2f5496; text-decoration: none; font-weight: 600; }
+  td a:hover { text-decoration: underline; }
+  .empty { padding: 30px 14px; text-align: center; color: #94a3b8; font-size: 13px; }
+  .loading { display: flex; align-items: center; gap: 10px; padding: 20px; color: #475569; font-size: 13px; }
+  .spinner { width: 16px; height: 16px; border: 2px solid #cbd5e1; border-top-color: #2f5496; border-radius: 50%; animation: spin 700ms linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error { padding: 14px; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 8px; font-size: 13px; }
+  @media (max-width: 640px) {
+    header { padding: 14px 18px; }
+    header h1 { font-size: 17px; }
+    .wrap { padding: 14px 14px 60px; }
+    .panel { padding: 14px; }
+    .options { flex-direction: column; align-items: flex-start; gap: 8px; }
+    th, td { padding: 8px 10px; font-size: 12px; }
+    th:nth-child(5), td:nth-child(5) { display: none; } /* 상품명 모바일 숨김 */
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔍 더필코리아 — 네이버 최저가 조사</h1>
+  <p>모델 코드를 입력하면 네이버 쇼핑 검색 결과에서 잡동사니/해외직구/타브랜드/이상저가를 자동 필터한 최저가 순위를 보여줍니다.</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <div class="input-row">
+      <textarea id="codes" placeholder="모델코드 입력 (여러 개는 쉼표나 줄바꿈으로 구분)&#10;예시:&#10;80842091&#10;81214671&#10;BG00A2G002 004" autocomplete="off"></textarea>
+      <button id="searchBtn">검색</button>
+    </div>
+    <div class="options">
+      <label><input type="checkbox" id="excludeOverseas" checked> 해외직구 제외</label>
+      <label>Top <select id="topN" style="padding:2px 6px; border-radius:4px; border:1px solid #cbd5e1;">
+        <option>5</option><option selected>10</option><option>20</option><option>30</option>
+      </select></label>
+      <span class="hint">💡 Cloudflare Workers 프록시 사용 — 해외에서도 정상 동작</span>
+    </div>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<script>
+const WORKER_URL = 'https://tfk-realtime.thefeelkorea.workers.dev/lowest-search';
+
+const $codes = document.getElementById('codes');
+const $btn = document.getElementById('searchBtn');
+const $results = document.getElementById('results');
+const $excludeOverseas = document.getElementById('excludeOverseas');
+const $topN = document.getElementById('topN');
+
+const fmtKRW = n => '₩' + (n || 0).toLocaleString();
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function searchOne(code) {
+  const params = new URLSearchParams({
+    code,
+    overseas: $excludeOverseas.checked ? '0' : '1',
+    top: $topN.value,
+  });
+  const r = await fetch(`${WORKER_URL}?${params}`);
+  if (!r.ok) throw new Error(`${code}: HTTP ${r.status}`);
+  return r.json();
+}
+
+function renderOne(data) {
+  const code = escapeHtml(data.code);
+  const dropped = data.dropped || {};
+  const droppedStr = Object.entries(dropped).map(([k,v]) => `${k} ${v}`).join(' · ');
+  if (!data.items || data.items.length === 0) {
+    return `<div class="result-section panel">
+      <h2><code>${code}</code> <span class="total">검색 ${data.total}건</span>${droppedStr ? `<span class="dropped">제외: ${droppedStr}</span>` : ''}</h2>
+      <div class="empty">⚪ 필터 후 결과 없음 — 검색어 확인 또는 해외직구 필터 해제</div>
+    </div>`;
+  }
+  const rows = data.items.map((it, i) => `<tr>
+    <td class="first"><span class="rank">${i+1}</span></td>
+    <td class="num price">${fmtKRW(it.price)}</td>
+    <td>${escapeHtml(it.mall)}</td>
+    <td>${escapeHtml(it.brand) || '<span style="color:#94a3b8;">—</span>'}</td>
+    <td>${escapeHtml((it.title || '').slice(0, 60))}</td>
+    <td>${it.link ? `<a href="${escapeHtml(it.link)}" target="_blank" rel="noopener">바로가기 →</a>` : ''}</td>
+  </tr>`).join('');
+  return `<div class="result-section">
+    <h2><code>${code}</code> <span class="total">검색 ${data.total}건 · 표시 ${data.items.length}건</span>${droppedStr ? `<span class="dropped">제외: ${droppedStr}</span>` : ''}</h2>
+    <table>
+      <thead><tr><th>순위</th><th style="text-align:right;">최저가</th><th>셀러</th><th>브랜드</th><th>상품명</th><th>링크</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+async function runSearch() {
+  const codes = $codes.value.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+  if (codes.length === 0) { alert('모델코드를 입력하세요'); return; }
+  $btn.disabled = true;
+  $btn.textContent = '검색 중...';
+  $results.innerHTML = `<div class="panel loading"><div class="spinner"></div>${codes.length}개 코드 검색 중...</div>`;
+  try {
+    const all = await Promise.all(codes.map(c => searchOne(c).catch(e => ({ code: c, items: [], total: 0, error: e.message }))));
+    $results.innerHTML = all.map(d => d.error
+      ? `<div class="error">${escapeHtml(d.code)}: ${escapeHtml(d.error)}</div>`
+      : renderOne(d)).join('');
+  } catch (e) {
+    $results.innerHTML = `<div class="error">검색 실패: ${escapeHtml(e.message)}</div>`;
+  } finally {
+    $btn.disabled = false;
+    $btn.textContent = '검색';
+  }
+}
+
+$btn.addEventListener('click', runSearch);
+$codes.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') runSearch();
+});
+</script>
+
+</body>
+</html>
