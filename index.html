@@ -2114,8 +2114,9 @@ if ('serviceWorker' in navigator) {
     return new TextDecoder().decode(plain);
   }
   async function _fetchSecure(name, refresh) {
-    const url = `./secure/${name}.enc` + (refresh ? '?t='+Date.now() : '');
-    const r = await fetch(url, {cache: refresh ? 'reload' : 'no-store'});
+    // v2.47.160: 항상 cache 우회 — SW + 브라우저 cache 모두 X, 매번 fresh fetch (그때그때 최신)
+    const url = `./secure/${name}.enc?t=${Date.now()}`;
+    const r = await fetch(url, {cache: 'reload'});
     if (!r.ok) throw new Error(`${name}.enc 응답 ${r.status}`);
     const enc = (await r.text()).trim();
     return JSON.parse(await _decryptEnc(enc));
