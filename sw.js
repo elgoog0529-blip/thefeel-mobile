@@ -1,5 +1,5 @@
 // v2.48.66 SW — .json/.enc/.html network-first, 자산 cache-first + 강제 새 cache
-const CACHE = 'thefeel-mobile-1787292792283';
+const CACHE = 'thefeel-mobile-1787297759248';
 const ASSETS = [
   './',
   './index.html',
